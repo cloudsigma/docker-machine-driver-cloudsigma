@@ -5,6 +5,7 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -25,7 +26,7 @@ const (
 
 // Delete the build directory.
 func Clean() error {
-	fmt.Println("==> Removing 'build' directory...")
+	fmt.Printf("==> Removing '%v' directory...\n", buildDir)
 	if err := os.RemoveAll(buildDir); err != nil {
 		return err
 	}
@@ -122,7 +123,7 @@ func Vet() error {
 		failed = true
 	}
 	if failed {
-		return fmt.Errorf("'go vet' found suspicious constructs.")
+		return errors.New("'go vet' found suspicious constructs.")
 	}
 	return nil
 }
@@ -137,10 +138,9 @@ func Test() error {
 		return err
 	}
 	for _, pkg := range pkgs {
-		testOutput, err := sh.Output("go", "test", "-v", "-cover", pkg)
-		fmt.Println(testOutput)
+		err := sh.RunV("go", "test", "-v", "-cover", pkg)
 		if err != nil {
-			return fmt.Errorf("There are failing tests.")
+			return errors.New("There are failing tests.")
 		}
 	}
 	return nil
