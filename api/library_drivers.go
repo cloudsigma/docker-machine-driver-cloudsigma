@@ -15,7 +15,19 @@ type LibraryDrivesService service
 
 // LibraryDrive. TODO: enhance structure with mandatory fields
 type LibraryDrive struct {
-	Arch string `json:"arch"`
+	Arch        string `json:"arch"`
+	Description string `json:"description,omitempty"`
+	Favourite   bool   `json:"favourite"`
+	ImageType   string `json:"image_type"`
+	Media       string `json:"media"`
+	Name        string `json:"name"`
+	OS          string `json:"os"`
+	Paid        bool   `json:"paid"`
+	ResourceURI string `json:"resource_uri"`
+	Size        int    `json:"size"`
+	Status      string `json:"status"`
+	StorageType string `json:"storage_type"`
+	UUID        string `json:"uuid"`
 }
 
 // Get detailed information for library drive identified by uuid.
