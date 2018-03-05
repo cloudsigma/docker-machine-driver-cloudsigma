@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 )
@@ -13,7 +14,7 @@ const libdriveBasePath = "libdrives"
 // CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/2.14/libdrives.html
 type LibraryDrivesService service
 
-// LibraryDrive. TODO: enhance structure with mandatory fields
+// LibraryDrive represents a CloudSigma library drive.
 type LibraryDrive struct {
 	Arch        string `json:"arch"`
 	Description string `json:"description,omitempty"`
@@ -48,4 +49,28 @@ func (s *LibraryDrivesService) Get(uuid string) (*LibraryDrive, *http.Response, 
 	}
 
 	return libdrive, resp, nil
+}
+
+// Clone a drive. Request body is optional.
+//
+// CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/2.14/libdrives.html#cloning-library-drive
+func (s *LibraryDrivesService) Clone(uuid string, driveCloneRequest *DriveCloneRequest) (*Drive, *http.Response, error) {
+	path := fmt.Sprintf("%v/%v/action/?do=clone", libdriveBasePath, uuid)
+
+	req, err := s.client.NewRequest(http.MethodPost, path, driveCloneRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(drivesRoot)
+	resp, err := s.client.Do(req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if len(root.Drives) > 1 {
+		return nil, resp, errors.New("root.Drives count cannot be more then 1")
+	}
+
+	return &root.Drives[0], resp, err
 }
