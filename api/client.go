@@ -82,6 +82,8 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 	return req, nil
 }
 
+// Do sends an API request and returns the API response. The API response is JSON decoded and stored in
+// the value pointed to by v, or returned as an error if an API error has occurred.
 func (c *Client) Do(req *http.Request, v interface{}) (*http.Response, error) {
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -93,7 +95,10 @@ func (c *Client) Do(req *http.Request, v interface{}) (*http.Response, error) {
 		resp.Body.Close()
 	}()
 
-	//TODO: check API response for errors here (status codes etc)
+	err = CheckResponse(resp)
+	if err != nil {
+		return resp, err
+	}
 
 	if v != nil {
 		if w, ok := v.(io.Writer); ok {
@@ -110,4 +115,22 @@ func (c *Client) Do(req *http.Request, v interface{}) (*http.Response, error) {
 	}
 
 	return resp, err
+}
+
+// CheckResponse checks the API response for errors, and returns them if present. A response is considered
+// an error if it has a status code outside the 200 range.
+func CheckResponse(resp *http.Response) error {
+	if code := resp.StatusCode; code >= 200 && code <= 299 {
+		return nil
+	}
+
+	errorResponse := &ErrorResponse{Response: resp}
+	data, err := ioutil.ReadAll(resp.Body)
+	if err == nil && len(data) > 0 {
+		err := json.Unmarshal(data, &errorResponse.ErrorElements)
+		if err != nil {
+			return err
+		}
+	}
+	return errorResponse
 }
