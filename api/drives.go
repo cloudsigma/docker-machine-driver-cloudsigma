@@ -34,7 +34,7 @@ type drivesRoot struct {
 	Drives []Drive `json:"objects"`
 }
 
-// Get detailed information for drive identified by uuid.
+// Get provides detailed information for drive identified by uuid.
 //
 // CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/2.14/drives.html#list-single-drive
 func (s *DrivesService) Get(uuid string) (*Drive, *http.Response, error) {

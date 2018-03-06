@@ -31,7 +31,7 @@ type LibraryDrive struct {
 	UUID        string `json:"uuid"`
 }
 
-// Get detailed information for library drive identified by uuid.
+// Get provides detailed information for library drive identified by uuid.
 //
 // CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/2.14/libdrives.html#list-single-drive
 func (s *LibraryDrivesService) Get(uuid string) (*LibraryDrive, *http.Response, error) {
@@ -51,7 +51,8 @@ func (s *LibraryDrivesService) Get(uuid string) (*LibraryDrive, *http.Response, 
 	return libdrive, resp, nil
 }
 
-// Clone a drive. Request body is optional.
+// Clone duplicates a drive. Request body is optional and any or all of the key/value pairs from the drive
+// definition can be omitted. Size of the cloned drive can only be bigger or the same.
 //
 // CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/2.14/libdrives.html#cloning-library-drive
 func (s *LibraryDrivesService) Clone(uuid string, driveCloneRequest *DriveCloneRequest) (*Drive, *http.Response, error) {

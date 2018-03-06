@@ -1,8 +1,13 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+)
+
+var (
+	ErrEmptyPayloadNotAllowed = errors.New("(api) empty payload not allowed")
 )
 
 // An ErrorResponse reports one or more errors caused by an API request.
