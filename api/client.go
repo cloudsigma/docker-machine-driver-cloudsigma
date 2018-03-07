@@ -32,6 +32,7 @@ type Client struct {
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
 
 	Drives        *DrivesService
+	Keypairs      *KeypairsService
 	LibraryDrives *LibraryDrivesService
 	Servers       *ServersService
 }
@@ -49,6 +50,7 @@ func NewBasicAuthClient(username, password string) *Client {
 	c := &Client{client: httpClient, BaseURL: baseUrl, UserAgent: userAgent, Username: username, Password: password}
 	c.common.client = c
 	c.Drives = (*DrivesService)(&c.common)
+	c.Keypairs = (*KeypairsService)(&c.common)
 	c.LibraryDrives = (*LibraryDrivesService)(&c.common)
 	c.Servers = (*ServersService)(&c.common)
 	return c
