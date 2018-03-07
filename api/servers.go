@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 )
@@ -39,12 +40,15 @@ type ServerCreateRequest struct {
 
 type NIC struct {
 	IPv4Configuration IPConfiguration `json:"ip_v4_conf,omitempty"`
-	IPv6Configuration IPConfiguration `json:"ip_v6_conf,omitempty"`
 	Model             string          `json:"model,omitempty"`
 }
 
 type IPConfiguration struct {
-	Configuration string `json:"conf"`
+	Configuration string `json:"conf,omitempty"`
+}
+
+type serversRoot struct {
+	Servers []Server `json:"objects"`
 }
 
 // Get provides detailed information for server identified by uuid.
@@ -70,7 +74,22 @@ func (s *ServersService) Create(serverCreateRequest *ServerCreateRequest) (*Serv
 		return nil, nil, ErrEmptyPayloadNotAllowed
 	}
 
-	//path := fmt.Sprintf("%v/", serverBasePath)
+	path := fmt.Sprintf("%v/", serverBasePath)
 
-	return nil, nil, nil
+	req, err := s.client.NewRequest(http.MethodPost, path, serverCreateRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(serversRoot)
+	resp, err := s.client.Do(req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if len(root.Servers) > 1 {
+		return nil, resp, errors.New("root.Servers count cannot be more then 1")
+	}
+
+	return &root.Servers[0], resp, err
 }
