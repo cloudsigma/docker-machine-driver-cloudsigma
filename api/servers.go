@@ -10,7 +10,7 @@ const serverBasePath = "servers"
 
 // ServersService handles communication with the servers related methods of the CloudSigma API.
 //
-// CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/2.14/servers.html
+// CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/latest/servers.html
 type ServersService service
 
 // Server represents a CloudSigma server.
@@ -88,7 +88,7 @@ func (s *ServersService) Create(serverCreateRequest *ServerCreateRequest) (*Serv
 	}
 
 	if len(root.Servers) > 1 {
-		return nil, resp, errors.New("root.Servers count cannot be more then 1")
+		return nil, resp, errors.New("root.Servers count cannot be more than 1")
 	}
 
 	return &root.Servers[0], resp, err

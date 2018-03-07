@@ -11,7 +11,7 @@ const libdriveBasePath = "libdrives"
 // LibraryDrivesService handles communication with the library drives related
 // methods of the CloudSigma API.
 //
-// CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/2.14/libdrives.html
+// CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/latest/libdrives.html
 type LibraryDrivesService service
 
 // LibraryDrive represents a CloudSigma library drive.
@@ -33,7 +33,7 @@ type LibraryDrive struct {
 
 // Get provides detailed information for library drive identified by uuid.
 //
-// CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/2.14/libdrives.html#list-single-drive
+// CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/latest/libdrives.html#list-single-drive
 func (s *LibraryDrivesService) Get(uuid string) (*LibraryDrive, *http.Response, error) {
 	path := fmt.Sprintf("%v/%v", libdriveBasePath, uuid)
 
@@ -54,7 +54,7 @@ func (s *LibraryDrivesService) Get(uuid string) (*LibraryDrive, *http.Response, 
 // Clone duplicates a drive. Request body is optional and any or all of the key/value pairs from the drive
 // definition can be omitted. Size of the cloned drive can only be bigger or the same.
 //
-// CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/2.14/libdrives.html#cloning-library-drive
+// CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/latest/libdrives.html#cloning-library-drive
 func (s *LibraryDrivesService) Clone(uuid string, driveCloneRequest *DriveCloneRequest) (*Drive, *http.Response, error) {
 	path := fmt.Sprintf("%v/%v/action/?do=clone", libdriveBasePath, uuid)
 
@@ -70,7 +70,7 @@ func (s *LibraryDrivesService) Clone(uuid string, driveCloneRequest *DriveCloneR
 	}
 
 	if len(root.Drives) > 1 {
-		return nil, resp, errors.New("root.Drives count cannot be more then 1")
+		return nil, resp, errors.New("root.Drives count cannot be more than 1")
 	}
 
 	return &root.Drives[0], resp, err

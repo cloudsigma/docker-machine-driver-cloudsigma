@@ -9,7 +9,7 @@ const driveBasePath = "drives"
 
 // DrivesService handles communication with the drives related methods of the CloudSigma API.
 //
-// CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/2.14/drives.html
+// CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/latest/drives.html
 type DrivesService service
 
 // Drive represents a CloudSigma drive.
@@ -36,7 +36,7 @@ type drivesRoot struct {
 
 // Get provides detailed information for drive identified by uuid.
 //
-// CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/2.14/drives.html#list-single-drive
+// CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/latest/drives.html#list-single-drive
 func (s *DrivesService) Get(uuid string) (*Drive, *http.Response, error) {
 	path := fmt.Sprintf("%v/%v", driveBasePath, uuid)
 
