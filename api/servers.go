@@ -15,14 +15,24 @@ type ServersService service
 
 // Server represents a CloudSigma server.
 type Server struct {
-	CPU         int    `json:"cpu"`
-	CPUType     string `json:"cpu_type,omitempty"`
-	Memory      int    `json:"mem"`
-	Name        string `json:"name"`
-	Owner       Owner  `json:"owner"`
-	ResourceURI string `json:"resource_uri"`
-	UUID        string `json:"uuid"`
-	VNCPassword string `json:"vnc_password"`
+	CPU         int           `json:"cpu"`
+	CPUType     string        `json:"cpu_type,omitempty"`
+	Drives      []ServerDrive `json:"drive,omitempty"`
+	Memory      int           `json:"mem"`
+	Name        string        `json:"name"`
+	Owner       Owner         `json:"owner"`
+	PublicKeys  []PublicKey   `json:"pubkeys,omitempty"`
+	ResourceURI string        `json:"resource_uri"`
+	Status      string        `json:"status,omitempty"`
+	UUID        string        `json:"uuid"`
+	VNCPassword string        `json:"vnc_password"`
+}
+
+type ServerDrive struct {
+	BootOrder  int    `json:"boot_order"`
+	DevChannel string `json:"dev_channel"`
+	Device     string `json:"device"`
+	DriveUUID  string `json:"drive"`
 }
 
 type Owner struct {
@@ -30,12 +40,26 @@ type Owner struct {
 	UUID        string `json:"uuid"`
 }
 
+type PublicKey struct {
+	ResourceURI string `json:"resource_uri,omitempty"`
+	UUID        string `json:"uuid"`
+}
+
+type AttachDriveRequest struct {
+	CPU         int           `json:"cpu"`
+	Drives      []ServerDrive `json:"drives"`
+	Memory      int           `json:"mem"`
+	Name        string        `json:"name"`
+	VNCPassword string        `json:"vnc_password"`
+}
+
 type ServerCreateRequest struct {
-	CPU         int    `json:"cpu"`
-	Memory      int    `json:"mem"`
-	Name        string `json:"name"`
-	VNCPassword string `json:"vnc_password"`
-	NICS        []NIC  `json:"nics,omitempty"`
+	CPU         int      `json:"cpu"`
+	Memory      int      `json:"mem"`
+	Name        string   `json:"name"`
+	VNCPassword string   `json:"vnc_password"`
+	NICS        []NIC    `json:"nics,omitempty"`
+	PublicKeys  []string `json:"pubkeys,omitempty"`
 }
 
 type NIC struct {
@@ -52,6 +76,8 @@ type serversRoot struct {
 }
 
 // Get provides detailed information for server identified by uuid.
+//
+// CloudSigma API docs: https://cloudsigma-docs.readthedocs.io/en/latest/servers.html#server-runtime-and-server-details
 func (s *ServersService) Get(uuid string) (*Server, *http.Response, error) {
 	path := fmt.Sprintf("%v/%v", serverBasePath, uuid)
 
@@ -69,6 +95,9 @@ func (s *ServersService) Get(uuid string) (*Server, *http.Response, error) {
 	return server, resp, nil
 }
 
+// Create makes a new virtual server with given payload.
+//
+// CloudSigma API docs: https://cloudsigma-docs.readthedocs.io/en/latest/servers.html#creating
 func (s *ServersService) Create(serverCreateRequest *ServerCreateRequest) (*Server, *http.Response, error) {
 	if serverCreateRequest == nil {
 		return nil, nil, ErrEmptyPayloadNotAllowed
@@ -92,4 +121,42 @@ func (s *ServersService) Create(serverCreateRequest *ServerCreateRequest) (*Serv
 	}
 
 	return &root.Servers[0], resp, err
+}
+
+// Delete removes a server together with it's all attached drives (recursive delete).
+//
+//CloudSigma API docs: https://cloudsigma-docs.readthedocs.io/en/latest/servers.html#delete-server-together-with-attached-drives-recursive-delete
+func (s *ServersService) Delete(uuid string) (*http.Response, error) {
+	path := fmt.Sprintf("%v/%v/?recurse=all_drives", serverBasePath, uuid)
+
+	req, err := s.client.NewRequest(http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.client.Do(req, nil)
+}
+
+// ServerDrive edits a server with attaching drives to it.
+//
+// CloudSigma API docs: https://cloudsigma-docs.readthedocs.io/en/latest/servers.html#attach-a-drive
+func (s *ServersService) AttachDrive(server *Server, attachDriveRequest *AttachDriveRequest) (*Server, *http.Response, error) {
+	if attachDriveRequest == nil {
+		return nil, nil, ErrEmptyPayloadNotAllowed
+	}
+
+	path := fmt.Sprintf("%v/%v/", serverBasePath, server.UUID)
+
+	req, err := s.client.NewRequest(http.MethodPut, path, attachDriveRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	serverWithDrives := new(Server)
+	resp, err := s.client.Do(req, serverWithDrives)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return serverWithDrives, resp, nil
 }
