@@ -45,6 +45,12 @@ type PublicKey struct {
 	UUID        string `json:"uuid"`
 }
 
+type ServerAction struct {
+	Action string `json:"action,omitempty"`
+	Result string `json:"result,omitempty"`
+	UUID   string `json:"uuid,omitempty"`
+}
+
 type AttachDriveRequest struct {
 	CPU         int           `json:"cpu"`
 	Drives      []ServerDrive `json:"drives"`
@@ -159,4 +165,42 @@ func (s *ServersService) AttachDrive(server *Server, attachDriveRequest *AttachD
 	}
 
 	return serverWithDrives, resp, nil
+}
+
+// Start starts a server with specific UUID.
+//
+// CloudSigma API docs: https://cloudsigma-docs.readthedocs.io/en/latest/servers.html#start
+func (s *ServersService) Start(uuid string) (*ServerAction, *http.Response, error) {
+	return s.doAction(uuid, "start")
+}
+
+// Stop stops a server with specific UUID. This action is equivalent to pulling the power cord of a physical server.
+//
+// CloudSigma API docs: https://cloudsigma-docs.readthedocs.io/en/latest/servers.html#stop
+func (s *ServersService) Stop(uuid string) (*ServerAction, *http.Response, error) {
+	return s.doAction(uuid, "stop")
+}
+
+// Stop Sends an ACPI shutdowns to a server with specific UUID for a minute.
+//
+// CloudSigma API docs: https://cloudsigma-docs.readthedocs.io/en/latest/servers.html#acpi-shutdown
+func (s *ServersService) Shutdown(uuid string) (*ServerAction, *http.Response, error) {
+	return s.doAction(uuid, "shutdown")
+}
+
+func (s *ServersService) doAction(uuid, action string) (*ServerAction, *http.Response, error) {
+	path := fmt.Sprintf("%v/%v/action/?do=%v", serverBasePath, uuid, action)
+
+	req, err := s.client.NewRequest(http.MethodPost, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	serverAction := new(ServerAction)
+	resp, err := s.client.Do(req, serverAction)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return serverAction, resp, nil
 }
