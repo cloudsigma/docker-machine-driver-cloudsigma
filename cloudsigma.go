@@ -1,8 +1,10 @@
 package cloudsigma
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"time"
 
@@ -15,7 +17,9 @@ import (
 )
 
 const (
-	defaultDriveUUID = "e47f39e0-075f-4b38-83e6-1b9dce36d0f1"
+	defaultDriveUUID = "6fe24a6b-b5c5-40ba-8860-771044d2500d"
+	defaultSSHPort   = 22
+	defaultSSHUser   = "cloudsigma"
 )
 
 type Driver struct {
@@ -37,8 +41,6 @@ func NewDriver(hostName, storePath string) *Driver {
 }
 
 func (d *Driver) Create() error {
-	//TODO: create key, clone drive, create server (with keys), attach drive
-
 	log.Infof("Creating SSH key...")
 	key, err := d.createSSHKey()
 	if err != nil {
@@ -59,6 +61,28 @@ func (d *Driver) Create() error {
 		return err
 	}
 	d.ServerUUID = server.UUID
+
+	log.Info("Waiting for IP address to be assigned to the server...")
+
+	client := d.getClient()
+	if _, _, err = client.Servers.Start(d.ServerUUID); err != nil {
+		return err
+	}
+	for {
+		server, _, err := client.Servers.Get(d.ServerUUID)
+		if err != nil {
+			return err
+		}
+		for _, nic := range server.Runtime.RuntimeNICS {
+			if nic.InterfaceType == "public" {
+				d.IPAddress = nic.IPv4.UUID
+			}
+		}
+		if d.IPAddress != "" {
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
 
 	log.Debugf("Created server UUID %v, drive UUID %v", d.ServerUUID, d.DriveUUID)
 
@@ -88,17 +112,20 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "CloudSigma drive uuid",
 			Value:  defaultDriveUUID,
 		},
+		mcnflag.IntFlag{
+			EnvVar: "CLOUDSIGMA_SSH_PORT",
+			Name:   "cloudsigma-ssh-port",
+			Usage:  "SSH port",
+			Value:  defaultSSHPort,
+		},
+		mcnflag.StringFlag{
+			EnvVar: "CLOUDSIGMA_SSH_USER",
+			Name:   "cloudsigma-ssh-user",
+			Usage:  "SSH username",
+			Value:  defaultSSHUser,
+		},
 	}
 }
-
-func (d *Driver) GetIP() (string, error) {
-	//TODO: see libmachine/drivers/drivers.go
-	return "", nil
-}
-
-//func (d *Driver) GetMachineName() string {
-//	return d.GetMachineName()
-//}
 
 func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
@@ -111,19 +138,17 @@ func (d *Driver) GetSSHKeyPath() string {
 	return d.SSHKeyPath
 }
 
-//func (d *Driver) GetSSHPort() (int, error) {
-//	//TODO: see libmachine/drivers/drivers.go
-//	return 0, nil
-//}
-
-//func (d *Driver) GetSSHUsername() string {
-//	//TODO: see libmachine/drivers/drivers.go
-//	return ""
-//}
-
 func (d *Driver) GetURL() (string, error) {
-	//TODO: see libmachine/drivers/drivers.go
-	return "", nil
+	if err := drivers.MustBeRunning(d); err != nil {
+		return "", nil
+	}
+
+	ip, err := d.GetIP()
+	if err != nil {
+		return "", nil
+	}
+
+	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, "2376")), nil
 }
 
 func (d *Driver) GetState() (state.State, error) {
@@ -161,6 +186,25 @@ func (d *Driver) PreCreateCheck() error {
 func (d *Driver) Remove() error {
 	client := d.getClient()
 
+	log.Info("Stopping CloudSigma server...")
+	if _, _, err := client.Servers.Stop(d.ServerUUID); err != nil {
+		return err
+	}
+	log.Debug("Waiting for status 'stopped'...")
+	for {
+		server, _, err := client.Servers.Get(d.ServerUUID)
+		if err != nil {
+			return err
+		}
+		if server.Status == "running" {
+			return errors.New("server could not stopped")
+		}
+		if server.Status == "stopped" {
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+
 	log.Infof("Deleting CloudSigma SSH key...")
 	if resp, err := client.Keypairs.Delete(d.SSHKeyUUID); err != nil {
 		if resp.StatusCode == http.StatusNotFound {
@@ -188,9 +232,10 @@ func (d *Driver) Restart() error {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	//TODO: see libmachine/drivers/drivers.go
-	d.Username = flags.String("cloudsigma-username")
 	d.Password = flags.String("cloudsigma-password")
+	d.SSHPort = flags.Int("cloudsigma-ssh-port")
+	d.SSHUser = flags.String("cloudsigma-ssh-user")
+	d.Username = flags.String("cloudsigma-username")
 
 	if d.Username == "" {
 		return fmt.Errorf("cloudsigma driver requires the --cloudsigma-username option")
