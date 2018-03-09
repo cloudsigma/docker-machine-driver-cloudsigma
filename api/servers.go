@@ -23,6 +23,7 @@ type Server struct {
 	Owner       Owner         `json:"owner"`
 	PublicKeys  []PublicKey   `json:"pubkeys,omitempty"`
 	ResourceURI string        `json:"resource_uri"`
+	Runtime     Runtime       `json:"runtime,omitempty"`
 	Status      string        `json:"status,omitempty"`
 	UUID        string        `json:"uuid"`
 	VNCPassword string        `json:"vnc_password"`
@@ -43,6 +44,20 @@ type Owner struct {
 type PublicKey struct {
 	ResourceURI string `json:"resource_uri,omitempty"`
 	UUID        string `json:"uuid"`
+}
+
+type Runtime struct {
+	RuntimeNICS []RuntimeNIC `json:"nics,omitempty"`
+}
+
+type RuntimeNIC struct {
+	InterfaceType string      `json:"interface_type,omitempty"`
+	IPv4          RuntimeIPv4 `json:"ip_v4,omitempty"`
+}
+
+type RuntimeIPv4 struct {
+	ResourceURI string `json:"resource_uri,omitempty"`
+	UUID        string `json:"uuid,omitempty"`
 }
 
 type ServerAction struct {
