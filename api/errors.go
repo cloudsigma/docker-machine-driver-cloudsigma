@@ -8,6 +8,7 @@ import (
 
 var (
 	ErrEmptyPayloadNotAllowed = errors.New("(api) empty payload not allowed")
+	ErrEmptyArgument          = errors.New("(api) argument cannot be empty")
 )
 
 // An ErrorResponse reports one or more errors caused by an API request.

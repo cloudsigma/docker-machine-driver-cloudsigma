@@ -100,6 +100,10 @@ type serversRoot struct {
 //
 // CloudSigma API docs: https://cloudsigma-docs.readthedocs.io/en/latest/servers.html#server-runtime-and-server-details
 func (s *ServersService) Get(uuid string) (*Server, *http.Response, error) {
+	if uuid == "" {
+		return nil, nil, ErrEmptyArgument
+	}
+
 	path := fmt.Sprintf("%v/%v", serverBasePath, uuid)
 
 	req, err := s.client.NewRequest(http.MethodGet, path, nil)
@@ -148,6 +152,10 @@ func (s *ServersService) Create(serverCreateRequest *ServerCreateRequest) (*Serv
 //
 //CloudSigma API docs: https://cloudsigma-docs.readthedocs.io/en/latest/servers.html#delete-server-together-with-attached-drives-recursive-delete
 func (s *ServersService) Delete(uuid string) (*http.Response, error) {
+	if uuid == "" {
+		return nil, ErrEmptyArgument
+	}
+
 	path := fmt.Sprintf("%v/%v/?recurse=all_drives", serverBasePath, uuid)
 
 	req, err := s.client.NewRequest(http.MethodDelete, path, nil)
@@ -162,7 +170,7 @@ func (s *ServersService) Delete(uuid string) (*http.Response, error) {
 //
 // CloudSigma API docs: https://cloudsigma-docs.readthedocs.io/en/latest/servers.html#attach-a-drive
 func (s *ServersService) AttachDrive(server *Server, attachDriveRequest *AttachDriveRequest) (*Server, *http.Response, error) {
-	if attachDriveRequest == nil {
+	if server == nil || attachDriveRequest == nil {
 		return nil, nil, ErrEmptyPayloadNotAllowed
 	}
 
@@ -204,6 +212,10 @@ func (s *ServersService) Shutdown(uuid string) (*ServerAction, *http.Response, e
 }
 
 func (s *ServersService) doAction(uuid, action string) (*ServerAction, *http.Response, error) {
+	if uuid == "" || action == "" {
+		return nil, nil, ErrEmptyArgument
+	}
+
 	path := fmt.Sprintf("%v/%v/action/?do=%v", serverBasePath, uuid, action)
 
 	req, err := s.client.NewRequest(http.MethodPost, path, nil)

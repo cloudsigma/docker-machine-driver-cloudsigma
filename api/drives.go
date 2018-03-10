@@ -38,6 +38,10 @@ type drivesRoot struct {
 //
 // CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/latest/drives.html#list-single-drive
 func (s *DrivesService) Get(uuid string) (*Drive, *http.Response, error) {
+	if uuid == "" {
+		return nil, nil, ErrEmptyArgument
+	}
+
 	path := fmt.Sprintf("%v/%v", driveBasePath, uuid)
 
 	req, err := s.client.NewRequest(http.MethodGet, path, nil)

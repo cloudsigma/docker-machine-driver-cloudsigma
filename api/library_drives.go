@@ -35,6 +35,10 @@ type LibraryDrive struct {
 //
 // CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/latest/libdrives.html#list-single-drive
 func (s *LibraryDrivesService) Get(uuid string) (*LibraryDrive, *http.Response, error) {
+	if uuid == "" {
+		return nil, nil, ErrEmptyArgument
+	}
+
 	path := fmt.Sprintf("%v/%v", libdriveBasePath, uuid)
 
 	req, err := s.client.NewRequest(http.MethodGet, path, nil)
@@ -56,6 +60,13 @@ func (s *LibraryDrivesService) Get(uuid string) (*LibraryDrive, *http.Response, 
 //
 // CloudSigma API docs: http://cloudsigma-docs.readthedocs.io/en/latest/libdrives.html#cloning-library-drive
 func (s *LibraryDrivesService) Clone(uuid string, driveCloneRequest *DriveCloneRequest) (*Drive, *http.Response, error) {
+	if uuid == "" {
+		return nil, nil, ErrEmptyArgument
+	}
+	if driveCloneRequest == nil {
+		return nil, nil, ErrEmptyPayloadNotAllowed
+	}
+
 	path := fmt.Sprintf("%v/%v/action/?do=clone", libdriveBasePath, uuid)
 
 	req, err := s.client.NewRequest(http.MethodPost, path, driveCloneRequest)

@@ -32,6 +32,10 @@ type KeypairCreateRequest struct {
 //
 // CloudSigma API docs: https://cloudsigma-docs.readthedocs.io/en/latest/keypairs.html#listing-getting-updating-deleting
 func (s *KeypairsService) Get(uuid string) (*Keypair, *http.Response, error) {
+	if uuid == "" {
+		return nil, nil, ErrEmptyArgument
+	}
+
 	path := fmt.Sprintf("%v/%v", keypairsBasePath, uuid)
 
 	req, err := s.client.NewRequest(http.MethodGet, path, nil)
@@ -80,6 +84,10 @@ func (s *KeypairsService) Create(keypairCreateRequest *KeypairCreateRequest) (*K
 //
 //CloudSigma API docs: https://cloudsigma-docs.readthedocs.io/en/latest/keypairs.html#listing-getting-updating-deleting
 func (s *KeypairsService) Delete(uuid string) (*http.Response, error) {
+	if uuid == "" {
+		return nil, ErrEmptyArgument
+	}
+
 	path := fmt.Sprintf("%v/%v/", keypairsBasePath, uuid)
 
 	req, err := s.client.NewRequest(http.MethodDelete, path, nil)
