@@ -41,50 +41,34 @@ func NewDriver(hostName, storePath string) *Driver {
 }
 
 func (d *Driver) Create() error {
-	log.Infof("Creating SSH key...")
+	log.Info("Creating SSH key...")
 	key, err := d.createSSHKey()
 	if err != nil {
 		return err
 	}
 	d.SSHKeyUUID = key.UUID
 
-	log.Infof("Cloning library drive...")
+	log.Info("Cloning library drive...")
 	drive, err := d.cloneDrive(defaultDriveUUID)
 	if err != nil {
 		return err
 	}
 	d.DriveUUID = drive.UUID
 
-	log.Infof("Creating CloudSigma server...")
+	log.Info("Creating CloudSigma server...")
 	server, err := d.createServer()
 	if err != nil {
 		return err
 	}
 	d.ServerUUID = server.UUID
 
-	log.Info("Waiting for IP address to be assigned to the server...")
-
-	client := d.getClient()
-	if _, _, err = client.Servers.Start(d.ServerUUID); err != nil {
+	log.Info("Starting CloudSigma server...")
+	err = d.startServer()
+	if err != nil {
 		return err
 	}
-	for {
-		server, _, err := client.Servers.Get(d.ServerUUID)
-		if err != nil {
-			return err
-		}
-		for _, nic := range server.Runtime.RuntimeNICS {
-			if nic.InterfaceType == "public" {
-				d.IPAddress = nic.IPv4.UUID
-			}
-		}
-		if d.IPAddress != "" {
-			break
-		}
-		time.Sleep(1 * time.Second)
-	}
 
-	log.Debugf("Created server UUID %v, drive UUID %v", d.ServerUUID, d.DriveUUID)
+	log.Debugf("Created server UUID %v, drive UUID %v, IP address %v", d.ServerUUID, d.DriveUUID, d.IPAddress)
 
 	return nil
 }
@@ -186,29 +170,35 @@ func (d *Driver) PreCreateCheck() error {
 func (d *Driver) Remove() error {
 	client := d.getClient()
 
-	log.Info("Stopping CloudSigma server...")
-	if _, _, err := client.Servers.Stop(d.ServerUUID); err != nil {
+	if server, _, err := client.Servers.Get(d.ServerUUID); err != nil {
 		return err
-	}
-	log.Debug("Waiting for status 'stopped'...")
-	for {
-		server, _, err := client.Servers.Get(d.ServerUUID)
-		if err != nil {
-			return err
-		}
+	} else {
 		if server.Status == "running" {
-			return errors.New("server could not stopped")
+			log.Info("Stopping CloudSigma server...")
+			if _, _, err := client.Servers.Stop(d.ServerUUID); err != nil {
+				return err
+			}
+
+			log.Debug("Waiting for server status to be stopped...")
+			for {
+				if server, _, err = client.Servers.Get(d.ServerUUID); err != nil {
+					return err
+				}
+				if server.Status == "running" {
+					return errors.New("server could not be stopped")
+				}
+				if server.Status == "stopped" {
+					break
+				}
+				time.Sleep(1 * time.Second)
+			}
 		}
-		if server.Status == "stopped" {
-			break
-		}
-		time.Sleep(1 * time.Second)
 	}
 
-	log.Infof("Deleting CloudSigma SSH key...")
+	log.Info("Deleting SSH key...")
 	if resp, err := client.Keypairs.Delete(d.SSHKeyUUID); err != nil {
 		if resp.StatusCode == http.StatusNotFound {
-			log.Infof("CloudSigma SSH key doesn't exist, assuming it is already deleted")
+			log.Info("SSH key doesn't exist, assuming it is already deleted")
 		} else {
 			return err
 		}
@@ -217,7 +207,7 @@ func (d *Driver) Remove() error {
 	log.Infof("Deleting CloudSigma server...")
 	if resp, err := client.Servers.Delete(d.ServerUUID); err != nil {
 		if resp.StatusCode == http.StatusNotFound {
-			log.Infof("CloudSigma server doesn't exist, assuming it is already deleted")
+			log.Info("CloudSigma server doesn't exist, assuming it is already deleted")
 		} else {
 			return err
 		}
@@ -245,11 +235,11 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (d *Driver) Start() error {
-	_, _, err := d.getClient().Servers.Start(d.ServerUUID)
-	return err
+	return d.startServer()
 }
 
 func (d *Driver) Stop() error {
+	//TODO: add graceful shutdown handling
 	_, _, err := d.getClient().Servers.Shutdown(d.ServerUUID)
 	return err
 }
@@ -319,7 +309,7 @@ func (d *Driver) cloneDrive(uuid string) (*api.Drive, error) {
 func (d *Driver) createServer() (*api.Server, error) {
 	serverCreateRequest := &api.ServerCreateRequest{
 		CPU:    2000,
-		Memory: 512 * 1024 * 1024,
+		Memory: 1024 * 1024 * 1024,
 		Name:   d.MachineName,
 		NICS: []api.NIC{
 			{IPv4Configuration: api.IPConfiguration{Configuration: "dhcp"}, Model: "virtio"},
@@ -328,7 +318,7 @@ func (d *Driver) createServer() (*api.Server, error) {
 		VNCPassword: "cloudsigma",
 	}
 
-	log.Debugf("Creating CloudSigma virtual server...")
+	log.Debug("Creating CloudSigma virtual server...")
 
 	client := d.getClient()
 	server, _, err := client.Servers.Create(serverCreateRequest)
@@ -346,12 +336,52 @@ func (d *Driver) createServer() (*api.Server, error) {
 		VNCPassword: server.VNCPassword,
 	}
 
-	log.Debugf("Attaching existing drive to virtual server...")
-
-	serverWithAttachedDrive, _, err := client.Servers.AttachDrive(server, attachDriveRequest)
+	log.Debug("Attaching existing drive to virtual server...")
+	server, _, err = client.Servers.AttachDrive(server, attachDriveRequest)
 	if err != nil {
-		return serverWithAttachedDrive, err
+		return server, err
 	}
 
-	return serverWithAttachedDrive, nil
+	return server, nil
+}
+
+func (d *Driver) startServer() error {
+	client := d.getClient()
+
+	log.Debug("Checking server state...")
+	server, _, err := client.Servers.Get(d.ServerUUID)
+	if err != nil {
+		return nil
+	}
+	if server.Status == "running" {
+		log.Debug("Server is already running...")
+		return nil
+	}
+
+	log.Debug("Starting CloudSigma virtual server...")
+	_, _, err = client.Servers.Start(d.ServerUUID)
+	if err != nil {
+		return err
+	}
+
+	d.IPAddress = ""
+	log.Debug("Waiting for IP address to be assigned to the server...")
+	for {
+		//TODO: add max-retry-count logic
+		server, _, err = client.Servers.Get(d.ServerUUID)
+		if err != nil {
+			return nil
+		}
+		for _, nic := range server.Runtime.RuntimeNICS {
+			if nic.InterfaceType == "public" {
+				d.IPAddress = nic.IPv4.UUID
+			}
+		}
+		if d.IPAddress != "" && server.Status == "running" {
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	return nil
 }
