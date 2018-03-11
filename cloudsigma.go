@@ -1,7 +1,6 @@
 package cloudsigma
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -170,29 +169,10 @@ func (d *Driver) PreCreateCheck() error {
 func (d *Driver) Remove() error {
 	client := d.getClient()
 
-	if server, _, err := client.Servers.Get(d.ServerUUID); err != nil {
+	log.Info("Stopping CloudSigma server...")
+	err := d.stopServer()
+	if err != nil {
 		return err
-	} else {
-		if server.Status == "running" {
-			log.Info("Stopping CloudSigma server...")
-			if _, _, err := client.Servers.Stop(d.ServerUUID); err != nil {
-				return err
-			}
-
-			log.Debug("Waiting for server status to be stopped...")
-			for {
-				if server, _, err = client.Servers.Get(d.ServerUUID); err != nil {
-					return err
-				}
-				if server.Status == "running" {
-					return errors.New("server could not be stopped")
-				}
-				if server.Status == "stopped" {
-					break
-				}
-				time.Sleep(1 * time.Second)
-			}
-		}
 	}
 
 	log.Info("Deleting SSH key...")
@@ -217,8 +197,11 @@ func (d *Driver) Remove() error {
 }
 
 func (d *Driver) Restart() error {
-	//TODO: see libmachine/drivers/drivers.go
-	return nil
+	err := d.stopServer()
+	if err != nil {
+		return err
+	}
+	return d.startServer()
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
@@ -239,9 +222,7 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Stop() error {
-	//TODO: add graceful shutdown handling
-	_, _, err := d.getClient().Servers.Shutdown(d.ServerUUID)
-	return err
+	return d.stopServer()
 }
 
 func (d *Driver) getClient() *api.Client {
@@ -354,7 +335,7 @@ func (d *Driver) startServer() error {
 		return nil
 	}
 	if server.Status == "running" {
-		log.Debug("Server is already running...")
+		log.Debug("Server is already running")
 		return nil
 	}
 
@@ -383,5 +364,41 @@ func (d *Driver) startServer() error {
 		time.Sleep(1 * time.Second)
 	}
 
+	return nil
+}
+
+func (d *Driver) stopServer() error {
+	client := d.getClient()
+
+	log.Debug("Checking server state...")
+	server, _, err := client.Servers.Get(d.ServerUUID)
+	if err != nil {
+		return nil
+	}
+	if server.Status == "stopped" {
+		log.Debug("Server is already stopped")
+		return nil
+	}
+
+	log.Debug("Stopping CloudSigma virtual server...")
+	_, _, err = client.Servers.Shutdown(d.ServerUUID)
+	if err != nil {
+		return err
+	}
+
+	log.Debug("Waiting until server is stopped...")
+	for {
+		server, _, err := client.Servers.Get(d.ServerUUID)
+		if err != nil {
+			return err
+		}
+		if server.Status == "running" {
+			return fmt.Errorf("could not stop server %v", d.ServerUUID)
+		}
+		if server.Status == "stopped" {
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
 	return nil
 }
