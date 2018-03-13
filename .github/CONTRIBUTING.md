@@ -16,7 +16,7 @@ First install mage by running:
 $ go get -u github.com/magefile/mage
 ```
 
-Clone this repository into `$GOPATH/github.com/cloudsigma/docker-machine-driver-cloudsigma`.
+Clone this repository into `$GOPATH/src/github.com/cloudsigma/docker-machine-driver-cloudsigma`.
 
 You can build binary with `mage clean build` command. The first run can take a time because
 all project's dependencies will be fetched into `vendor` folder.
