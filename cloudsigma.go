@@ -17,7 +17,7 @@ import (
 
 const (
 	defaultCPU       = 2000
-	defaultDiskSize  = 20
+	defaultDriveSize = 20
 	defaultDriveUUID = "6fe24a6b-b5c5-40ba-8860-771044d2500d"
 	defaultMemory    = 1024
 	defaultSSHPort   = 22
@@ -27,7 +27,7 @@ const (
 type Driver struct {
 	*drivers.BaseDriver
 	CPU        int
-	DiskSize   int
+	DriveSize  int
 	DriveUUID  string
 	Memory     int
 	Password   string
@@ -92,14 +92,14 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  defaultCPU,
 		},
 		mcnflag.IntFlag{
-			EnvVar: "CLOUDSIGMA_DISK_SIZE",
+			EnvVar: "CLOUDSIGMA_DRIVE_SIZE",
 			Name:   "cloudsigma-disk-size",
 			Usage:  "Disk size for the host in GiB",
-			Value:  defaultDiskSize,
+			Value:  defaultDriveSize,
 		},
 		mcnflag.StringFlag{
-			EnvVar: "CLOUDSIGMA_DRIVE",
-			Name:   "cloudsigma-drive",
+			EnvVar: "CLOUDSIGMA_DRIVE_UUID",
+			Name:   "cloudsigma-drive-uuid",
 			Usage:  "CloudSigma drive uuid",
 			Value:  defaultDriveUUID,
 		},
@@ -230,8 +230,8 @@ func (d *Driver) Restart() error {
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.CPU = flags.Int("cloudsigma-cpu")
-	d.DiskSize = flags.Int("cloudsigma-disk-size")
-	d.DriveUUID = flags.String("cloudsigma-drive")
+	d.DriveSize = flags.Int("cloudsigma-drive-size")
+	d.DriveUUID = flags.String("cloudsigma-drive-uuid")
 	d.Memory = flags.Int("cloudsigma-memory")
 	d.Password = flags.String("cloudsigma-password")
 	d.SSHPort = flags.Int("cloudsigma-ssh-port")
@@ -291,7 +291,7 @@ func (d *Driver) createSSHKey() (*api.Keypair, error) {
 func (d *Driver) cloneDrive(uuid string) (*api.Drive, error) {
 	driveCloneRequest := &api.DriveCloneRequest{
 		Name:        d.MachineName,
-		Size:        20 * 1024 * 1024 * 1024,
+		Size:        d.DriveSize * 1024 * 1024 * 1024,
 		StorageType: "dssd",
 	}
 
@@ -322,8 +322,8 @@ func (d *Driver) cloneDrive(uuid string) (*api.Drive, error) {
 
 func (d *Driver) createServer() (*api.Server, error) {
 	serverCreateRequest := &api.ServerCreateRequest{
-		CPU:    2000,
-		Memory: 1024 * 1024 * 1024,
+		CPU:    d.CPU,
+		Memory: d.Memory * 1024 * 1024,
 		Name:   d.MachineName,
 		NICS: []api.NIC{
 			{IPv4Configuration: api.IPConfiguration{Configuration: "dhcp"}, Model: "virtio"},
