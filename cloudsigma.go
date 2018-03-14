@@ -93,8 +93,8 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.IntFlag{
 			EnvVar: "CLOUDSIGMA_DRIVE_SIZE",
-			Name:   "cloudsigma-disk-size",
-			Usage:  "Disk size for the host in GiB",
+			Name:   "cloudsigma-drive-size",
+			Usage:  "Drive size for the host in GiB",
 			Value:  defaultDriveSize,
 		},
 		mcnflag.StringFlag{
@@ -125,6 +125,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "cloudsigma-ssh-user",
 			Usage:  "SSH username to connect.",
 			Value:  defaultSSHUser,
+		},
+		mcnflag.StringFlag{
+			EnvVar: "CLOUDSIGMA_STATIC_IP",
+			Name:   "cloudsigma-static-ip",
+			Usage:  "CloudSigma network adapter’s static IP address",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "CLOUDSIGMA_USERNAME",
@@ -186,7 +191,15 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) PreCreateCheck() error {
-	//TODO: see libmachine/drivers/drivers.go
+	if d.StaticIP != "" {
+		if parsedIP := net.ParseIP(d.StaticIP); parsedIP == nil {
+			return fmt.Errorf("%s is not a valid textual representation of an IP address", d.StaticIP)
+		}
+		_, _, err := d.getClient().IPs.Get(d.StaticIP)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
