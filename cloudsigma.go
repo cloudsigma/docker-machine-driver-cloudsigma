@@ -16,17 +16,24 @@ import (
 )
 
 const (
+	defaultCPU       = 2000
+	defaultDiskSize  = 20
 	defaultDriveUUID = "6fe24a6b-b5c5-40ba-8860-771044d2500d"
+	defaultMemory    = 1024
 	defaultSSHPort   = 22
 	defaultSSHUser   = "cloudsigma"
 )
 
 type Driver struct {
 	*drivers.BaseDriver
+	CPU        int
+	DiskSize   int
 	DriveUUID  string
+	Memory     int
 	Password   string
 	ServerUUID string
 	SSHKeyUUID string
+	StaticIP   string
 	Username   string
 }
 
@@ -77,17 +84,18 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
-	//TODO: enhance with additional values
 	return []mcnflag.Flag{
-		mcnflag.StringFlag{
-			EnvVar: "CLOUDSIGMA_USERNAME",
-			Name:   "cloudsigma-username",
-			Usage:  "CloudSigma user email",
+		mcnflag.IntFlag{
+			EnvVar: "CLOUDSIGMA_CPU",
+			Name:   "cloudsigma-cpu",
+			Usage:  "CPU clock speed for the host in MHz",
+			Value:  defaultCPU,
 		},
-		mcnflag.StringFlag{
-			EnvVar: "CLOUDSIGMA_PASSWORD",
-			Name:   "cloudsigma-password",
-			Usage:  "CloudSigma password",
+		mcnflag.IntFlag{
+			EnvVar: "CLOUDSIGMA_DISK_SIZE",
+			Name:   "cloudsigma-disk-size",
+			Usage:  "Disk size for the host in GiB",
+			Value:  defaultDiskSize,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "CLOUDSIGMA_DRIVE",
@@ -96,16 +104,32 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  defaultDriveUUID,
 		},
 		mcnflag.IntFlag{
+			EnvVar: "CLOUDSIGMA_MEMORY",
+			Name:   "cloudsigma-memory",
+			Usage:  "Size of memory for the host in MB",
+			Value:  defaultMemory,
+		},
+		mcnflag.StringFlag{
+			EnvVar: "CLOUDSIGMA_PASSWORD",
+			Name:   "cloudsigma-password",
+			Usage:  "CloudSigma password",
+		},
+		mcnflag.IntFlag{
 			EnvVar: "CLOUDSIGMA_SSH_PORT",
 			Name:   "cloudsigma-ssh-port",
-			Usage:  "SSH port",
+			Usage:  "SSH port to connect",
 			Value:  defaultSSHPort,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "CLOUDSIGMA_SSH_USER",
 			Name:   "cloudsigma-ssh-user",
-			Usage:  "SSH username",
+			Usage:  "SSH username to connect.",
 			Value:  defaultSSHUser,
+		},
+		mcnflag.StringFlag{
+			EnvVar: "CLOUDSIGMA_USERNAME",
+			Name:   "cloudsigma-username",
+			Usage:  "CloudSigma user email",
 		},
 	}
 }
@@ -205,13 +229,22 @@ func (d *Driver) Restart() error {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	d.CPU = flags.Int("cloudsigma-cpu")
+	d.DiskSize = flags.Int("cloudsigma-disk-size")
+	d.DriveUUID = flags.String("cloudsigma-drive")
+	d.Memory = flags.Int("cloudsigma-memory")
 	d.Password = flags.String("cloudsigma-password")
 	d.SSHPort = flags.Int("cloudsigma-ssh-port")
 	d.SSHUser = flags.String("cloudsigma-ssh-user")
+	d.StaticIP = flags.String("cloudsigma-static-ip")
 	d.Username = flags.String("cloudsigma-username")
 
 	if d.Username == "" {
 		return fmt.Errorf("cloudsigma driver requires the --cloudsigma-username option")
+	}
+
+	if d.Password == "" {
+		return fmt.Errorf("cloudsigma driver requires the --cloudsigma-password option")
 	}
 
 	return nil

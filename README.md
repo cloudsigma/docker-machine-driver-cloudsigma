@@ -30,6 +30,7 @@ If you encounter any troubles, activate the debug mode with `docker-machine --de
 - `--cloudsigma-password`: **required** Your CloudSigma password.
 - `--cloudsigma-ssh-port`: SSH port to connect.
 - `--cloudsigma-ssh-user`: SSH username to connect.
+- `--cloudsigma-static-ip`: CloudSigma network adapter’s static IP address.
 - `--cloudsigma-username`: **required** Your CloudSigma user email.
 
 #### Environment variables and default values
@@ -42,8 +43,9 @@ If you encounter any troubles, activate the debug mode with `docker-machine --de
 | `--cloudsigma-memory`       | `CLOUDSIGMA_MEMORY`    | `1024`                                 |
 | **`--cloudsigma-password`** | `CLOUDSIGMA_PASSWORD`  | -                                      |
 | `--cloudsigma-ssh-port`     | `CLOUDSIGMA_SSH_PORT`  | `22`                                   |
-| **`--cloudsigma-ssh-user`** | `CLOUDSIGMA_SSH_USER`  | `cloudsigma`                           |
-| `--cloudsigma-username`     | `CLOUDSIGMA_USERNAME`  | -                                      |
+| `--cloudsigma-ssh-user`     | `CLOUDSIGMA_SSH_USER`  | `cloudsigma`                           |
+| `--cloudsigma-static-ip`    | `CLOUDSIGMA_STATIC_IP` | -                                      |
+| **`--cloudsigma-username`** | `CLOUDSIGMA_USERNAME`  | -                                      |
 
 
 ## Contributing
