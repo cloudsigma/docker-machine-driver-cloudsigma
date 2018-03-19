@@ -114,3 +114,9 @@ func TestCloudsigma_PreCreateCheck_InvalidIPAddress(t *testing.T) {
 
 	assert.Error(t, err)
 }
+
+func TestCloudsigma_DriverName(t *testing.T) {
+	driver := NewDriver("default", "path")
+
+	assert.Equal(t, "cloudsigma", driver.DriverName())
+}
