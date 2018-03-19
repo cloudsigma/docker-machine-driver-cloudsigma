@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -35,4 +37,20 @@ func testMethod(t *testing.T, r *http.Request, expected string) {
 
 func format(infoMessage string, expected, got interface{}) string {
 	return fmt.Sprintf("Info: %v\nExpected: %v\n     Got: %v", infoMessage, expected, got)
+}
+
+func TestClient_SetLocationForBaseURL_emptyLocation(t *testing.T) {
+	client = NewBasicAuthClient("user", "password")
+
+	client.SetLocationForBaseURL("")
+
+	assert.Equal(t, "https://zrh.cloudsigma.com/api/2.0/", client.BaseURL.String())
+}
+
+func TestClient_SetLocationForBaseURL_customLocation(t *testing.T) {
+	client = NewBasicAuthClient("user", "password")
+
+	client.SetLocationForBaseURL("wdc")
+
+	assert.Equal(t, "https://wdc.cloudsigma.com/api/2.0/", client.BaseURL.String())
 }

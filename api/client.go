@@ -13,7 +13,7 @@ import (
 
 const (
 	defaultLocation = "zrh"
-	defaultBaseURL  = "https://" + defaultLocation + ".cloudsigma.com/api/2.0/"
+	defaultBaseURL  = "https://%s.cloudsigma.com/api/2.0/"
 	userAgent       = "docker-machine-driver-cloudsigma"
 
 	mediaType = "application/json"
@@ -46,9 +46,9 @@ type service struct {
 // and password.
 func NewBasicAuthClient(username, password string) *Client {
 	httpClient := http.DefaultClient
-	baseUrl, _ := url.Parse(defaultBaseURL)
 
-	c := &Client{client: httpClient, BaseURL: baseUrl, UserAgent: userAgent, Username: username, Password: password}
+	c := &Client{client: httpClient, UserAgent: userAgent, Username: username, Password: password}
+	c.SetLocationForBaseURL("")
 	c.common.client = c
 	c.Drives = (*DrivesService)(&c.common)
 	c.IPs = (*IPsService)(&c.common)
@@ -56,6 +56,18 @@ func NewBasicAuthClient(username, password string) *Client {
 	c.LibraryDrives = (*LibraryDrivesService)(&c.common)
 	c.Servers = (*ServersService)(&c.common)
 	return c
+}
+
+// SetLocationForBaseURL configures location (a sub-domain) for API endpoint. If location is empty, then default
+// location 'zrh' (Zurich, Switzerland) will be used.
+//
+// CloudSigma API docs: https://cloudsigma-docs.readthedocs.io/en/latest/general.html#api-endpoint.
+func (c *Client) SetLocationForBaseURL(location string) {
+	baseUrl, _ := url.Parse(fmt.Sprintf(defaultBaseURL, defaultLocation))
+	if location != "" {
+		baseUrl, _ = url.Parse(fmt.Sprintf(defaultBaseURL, location))
+	}
+	c.BaseURL = baseUrl
 }
 
 // NewRequest creates an API request. A relative URL can be provided in urlStr, in which case it is resolved
