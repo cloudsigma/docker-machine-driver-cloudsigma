@@ -90,6 +90,7 @@ type NIC struct {
 
 type IPConfiguration struct {
 	Configuration string `json:"conf,omitempty"`
+	IP            string `json:"ip,omitempty"`
 }
 
 type serversRoot struct {

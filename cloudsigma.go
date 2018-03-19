@@ -345,6 +345,15 @@ func (d *Driver) createServer() (*api.Server, error) {
 		VNCPassword: "cloudsigma",
 	}
 
+	if d.StaticIP != "" {
+		log.Debugf("Static IP address is defined %s and will be used it for NIC configuration.", d.StaticIP)
+
+		serverCreateRequest.NICS[0].IPv4Configuration = api.IPConfiguration{
+			Configuration: "static",
+			IP:            d.StaticIP,
+		}
+	}
+
 	log.Debug("Creating CloudSigma virtual server...")
 
 	client := d.getClient()
