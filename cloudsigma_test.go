@@ -39,8 +39,8 @@ func TestCloudsigma_SetConfigFromFlags(t *testing.T) {
 	driver := NewDriver("default", "path")
 	checkFlags := &drivers.CheckDriverOptions{
 		FlagsValues: map[string]interface{}{
-			"cloudsigma-username": "user@cloudsigma.com",
 			"cloudsigma-password": "password",
+			"cloudsigma-username": "user@cloudsigma.com",
 		},
 		CreateFlags: driver.GetCreateFlags(),
 	}
@@ -56,10 +56,10 @@ func TestCloudsigma_SetConfigFromFlags_CustomSSHUserAndPort(t *testing.T) {
 	driver := NewDriver("default", "path")
 	checkFlags := &drivers.CheckDriverOptions{
 		FlagsValues: map[string]interface{}{
-			"cloudsigma-username": "user@cloudsigma.com",
 			"cloudsigma-password": "password",
 			"cloudsigma-ssh-port": 2222,
 			"cloudsigma-ssh-user": "ssh_user",
+			"cloudsigma-username": "user@cloudsigma.com",
 		},
 		CreateFlags: driver.GetCreateFlags(),
 	}
@@ -77,13 +77,14 @@ func TestCloudsigma_SetConfigFromFlags_CustomServerParameter(t *testing.T) {
 	driver := NewDriver("default", "path")
 	checkFlags := &drivers.CheckDriverOptions{
 		FlagsValues: map[string]interface{}{
-			"cloudsigma-username":   "user@cloudsigma.com",
-			"cloudsigma-password":   "password",
-			"cloudsigma-cpu":        1500,
-			"cloudsigma-drive-size": 15,
-			"cloudsigma-drive-uuid": "generated-uuid",
-			"cloudsigma-memory":     512,
-			"cloudsigma-static-ip":  "192.168.0.1",
+			"cloudsigma-api-location": "wdc",
+			"cloudsigma-cpu":          1500,
+			"cloudsigma-drive-size":   15,
+			"cloudsigma-drive-uuid":   "generated-uuid",
+			"cloudsigma-memory":       512,
+			"cloudsigma-password":     "password",
+			"cloudsigma-static-ip":    "192.168.0.1",
+			"cloudsigma-username":     "user@cloudsigma.com",
 		},
 		CreateFlags: driver.GetCreateFlags(),
 	}
@@ -91,6 +92,7 @@ func TestCloudsigma_SetConfigFromFlags_CustomServerParameter(t *testing.T) {
 	err := driver.SetConfigFromFlags(checkFlags)
 
 	assert.NoError(t, err)
+	assert.Equal(t, "wdc", driver.APILocation)
 	assert.Equal(t, 1500, driver.CPU)
 	assert.Equal(t, 15, driver.DriveSize)
 	assert.Equal(t, "generated-uuid", driver.DriveUUID)
@@ -102,9 +104,9 @@ func TestCloudsigma_PreCreateCheck_InvalidIPAddress(t *testing.T) {
 	driver := NewDriver("default", "path")
 	checkFlags := &drivers.CheckDriverOptions{
 		FlagsValues: map[string]interface{}{
-			"cloudsigma-username":  "user@cloudsigma.com",
 			"cloudsigma-password":  "password",
 			"cloudsigma-static-ip": "999.999.888.777",
+			"cloudsigma-username":  "user@cloudsigma.com",
 		},
 		CreateFlags: driver.GetCreateFlags(),
 	}

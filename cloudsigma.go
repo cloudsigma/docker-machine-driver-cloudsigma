@@ -26,15 +26,16 @@ const (
 
 type Driver struct {
 	*drivers.BaseDriver
-	CPU        int
-	DriveSize  int
-	DriveUUID  string
-	Memory     int
-	Password   string
-	ServerUUID string
-	SSHKeyUUID string
-	StaticIP   string
-	Username   string
+	APILocation string
+	CPU         int
+	DriveSize   int
+	DriveUUID   string
+	Memory      int
+	Password    string
+	ServerUUID  string
+	SSHKeyUUID  string
+	StaticIP    string
+	Username    string
 }
 
 func NewDriver(hostName, storePath string) *Driver {
@@ -85,6 +86,11 @@ func (d *Driver) DriverName() string {
 
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
+		mcnflag.StringFlag{
+			EnvVar: "CLOUDSIGMA_API_LOCATION",
+			Name:   "cloudsigma-api-location",
+			Usage:  "CloudSigma API location endpoint",
+		},
 		mcnflag.IntFlag{
 			EnvVar: "CLOUDSIGMA_CPU",
 			Name:   "cloudsigma-cpu",
@@ -242,6 +248,7 @@ func (d *Driver) Restart() error {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	d.APILocation = flags.String("cloudsigma-api-location")
 	d.CPU = flags.Int("cloudsigma-cpu")
 	d.DriveSize = flags.Int("cloudsigma-drive-size")
 	d.DriveUUID = flags.String("cloudsigma-drive-uuid")
@@ -272,7 +279,11 @@ func (d *Driver) Stop() error {
 }
 
 func (d *Driver) getClient() *api.Client {
-	return api.NewBasicAuthClient(d.Username, d.Password)
+	client := api.NewBasicAuthClient(d.Username, d.Password)
+	if d.APILocation != "" {
+		client.SetLocationForBaseURL(d.APILocation)
+	}
+	return client
 }
 
 func (d *Driver) createSSHKey() (*api.Keypair, error) {
@@ -346,7 +357,7 @@ func (d *Driver) createServer() (*api.Server, error) {
 	}
 
 	if d.StaticIP != "" {
-		log.Debugf("Static IP address is defined %s and will be used it for NIC configuration.", d.StaticIP)
+		log.Debugf("Static ip address is defined %s, use it for NIC configuration.", d.StaticIP)
 
 		serverCreateRequest.NICS[0].IPv4Configuration = api.IPConfiguration{
 			Configuration: "static",

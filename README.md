@@ -23,6 +23,7 @@ If you encounter any troubles, activate the debug mode with `docker-machine --de
 
 ## Options
 
+- `--cloudsigma-api-location`: CloudSigma API location endpoint.
 - `--cloudsigma-cpu`: CPU clock speed for the host in MHz.
 - `--cloudsigma-drive-size`: Drive size for the host in GiB.
 - `--cloudsigma-drive-uuid`: CloudSigma drive uuid.
@@ -35,17 +36,18 @@ If you encounter any troubles, activate the debug mode with `docker-machine --de
 
 #### Environment variables and default values
 
-| CLI option                  | Environment variable    | Default                                |
-| --------------------------- | ----------------------- | -------------------------------------- |
-| `--cloudsigma-cpu`          | `CLOUDSIGMA_CPU`        | `2000`                                 |
-| `--cloudsigma-drive-size`   | `CLOUDSIGMA_DRIVE_SIZE` | `20`                                   |
-| `--cloudsigma-drive-uuid`   | `CLOUDSIGMA_DRIVE_UUID` | `6fe24a6b-b5c5-40ba-8860-771044d2500d` |
-| `--cloudsigma-memory`       | `CLOUDSIGMA_MEMORY`     | `1024`                                 |
-| **`--cloudsigma-password`** | `CLOUDSIGMA_PASSWORD`   | -                                      |
-| `--cloudsigma-ssh-port`     | `CLOUDSIGMA_SSH_PORT`   | `22`                                   |
-| `--cloudsigma-ssh-user`     | `CLOUDSIGMA_SSH_USER`   | `cloudsigma`                           |
-| `--cloudsigma-static-ip`    | `CLOUDSIGMA_STATIC_IP`  | -                                      |
-| **`--cloudsigma-username`** | `CLOUDSIGMA_USERNAME`   | -                                      |
+| CLI option                  | Environment variable      | Default                                |
+| --------------------------- | ------------------------- | -------------------------------------- |
+| `--cloudsigma-api-location` | `CLOUDSIGMA_API_LOCATION` | -                                      |
+| `--cloudsigma-cpu`          | `CLOUDSIGMA_CPU`          | `2000`                                 |
+| `--cloudsigma-drive-size`   | `CLOUDSIGMA_DRIVE_SIZE`   | `20`                                   |
+| `--cloudsigma-drive-uuid`   | `CLOUDSIGMA_DRIVE_UUID`   | `6fe24a6b-b5c5-40ba-8860-771044d2500d` |
+| `--cloudsigma-memory`       | `CLOUDSIGMA_MEMORY`       | `1024`                                 |
+| **`--cloudsigma-password`** | `CLOUDSIGMA_PASSWORD`     | -                                      |
+| `--cloudsigma-ssh-port`     | `CLOUDSIGMA_SSH_PORT`     | `22`                                   |
+| `--cloudsigma-ssh-user`     | `CLOUDSIGMA_SSH_USER`     | `cloudsigma`                           |
+| `--cloudsigma-static-ip`    | `CLOUDSIGMA_STATIC_IP`    | -                                      |
+| **`--cloudsigma-username`** | `CLOUDSIGMA_USERNAME`     | -                                      |
 
 
 ## Contributing
