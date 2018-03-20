@@ -1,10 +1,11 @@
 package api
 
 import (
-	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -35,10 +36,6 @@ func testMethod(t *testing.T, r *http.Request, expected string) {
 	}
 }
 
-func format(infoMessage string, expected, got interface{}) string {
-	return fmt.Sprintf("Info: %v\nExpected: %v\n     Got: %v", infoMessage, expected, got)
-}
-
 func TestClient_SetLocationForBaseURL_emptyLocation(t *testing.T) {
 	client = NewBasicAuthClient("user", "password")
 
@@ -53,4 +50,35 @@ func TestClient_SetLocationForBaseURL_customLocation(t *testing.T) {
 	client.SetLocationForBaseURL("wdc")
 
 	assert.Equal(t, "https://wdc.cloudsigma.com/api/2.0/", client.BaseURL.String())
+}
+
+func TestClient_CheckResponse_errorElements(t *testing.T) {
+	resp := &http.Response{
+		Request:    &http.Request{},
+		StatusCode: http.StatusBadRequest,
+		Body:       ioutil.NopCloser(strings.NewReader(`[{"error_message":"error"}]`)),
+	}
+	expected := []ErrorElement{
+		{Message: "error"},
+	}
+
+	err := CheckResponse(resp).(*ErrorResponse)
+
+	assert.Error(t, err)
+	assert.Equal(t, 400, err.Response.StatusCode)
+	assert.Equal(t, expected, err.ErrorElements)
+}
+
+func TestClient_CheckResponse_noBody(t *testing.T) {
+	resp := &http.Response{
+		Request:    &http.Request{},
+		StatusCode: http.StatusBadRequest,
+		Body:       ioutil.NopCloser(strings.NewReader("")),
+	}
+
+	err := CheckResponse(resp).(*ErrorResponse)
+
+	assert.Error(t, err)
+	assert.Equal(t, 400, err.Response.StatusCode)
+	assert.Nil(t, err.ErrorElements)
 }

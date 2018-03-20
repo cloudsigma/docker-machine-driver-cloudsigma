@@ -3,6 +3,8 @@ package api
 import (
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestServers_Create_emptyPayload(t *testing.T) {
@@ -15,7 +17,6 @@ func TestServers_Create_emptyPayload(t *testing.T) {
 
 	_, _, err := client.Servers.Create(nil)
 
-	if err != ErrEmptyPayloadNotAllowed {
-		t.Errorf(format("Server.Create should return error on empty payload", ErrEmptyPayloadNotAllowed, err))
-	}
+	assert.Error(t, err)
+	assert.Equal(t, ErrEmptyPayloadNotAllowed.Error(), err.Error())
 }
