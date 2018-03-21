@@ -14,6 +14,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Basic authorization header for username: "user" and password: "password"
+const authorizationHeader = "Basic dXNlcjpwYXNzd29yZA=="
+
 func setup() (client *Client, mux *http.ServeMux, serverURL string, teardown func()) {
 	mux = http.NewServeMux()
 
@@ -96,7 +99,7 @@ func TestClient_Do(t *testing.T) {
 		A string
 	}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, r.Method, "GET")
+		assert.Equal(t, "GET", r.Method)
 		fmt.Fprint(w, `{"A":"a"}`)
 	})
 	req, _ := client.NewRequest("GET", ".", nil)
