@@ -14,9 +14,8 @@ A high level overview of our contributing guidelines.
 
 - [Contributing Code](#contributing-code)
   - [Setting Up Your Development Environment](#setting-up-your-development-environment)
+  - [Build Tasks](#build-tasks)
   - [Testing and Building](#testing-and-building)
-  - [Building OS packages](#building-os-packages)
-- [Frequently asked questions](#frequently-asked-questions)
 
 Don't fret, it's not as daunting as the table of contents makes it out to be!
 
@@ -48,7 +47,44 @@ Now you can keep your forked repository up-to-date with the upstream repository 
 and push to your repository with `git push`. See [GitHub Help](https://help.github.com/articles/syncing-a-fork/)
 for more details.
 
+The project uses [Mage](https://magefile.org/) as build tool instead of make, so first install mage:
+
+```bash
+$ go get -u github.com/magefile/mage
+```
+
+### Build Tasks
+
+The project has predefined the following tasks:
+
+```
+build      Build binary for default local system's operating system and architecture.
+check      Run all checks and tests.
+clean      Delete the build directory.
+fmt        Run gofmt linter.
+release    Build release binaries for all supported versions.
+test       Run all tests.
+vendor     Install all dependencies into vendor directory.
+vet        Run go vet linter.
+```
+
+Task dependencies can be seen on the picture below.
+![build-tasks](build_tasks.png)
+
+E.g. if you run `mage build`, then following tasks will be executed: `fmt -> vendor -> vet -> test -> build`.
+Any customizations of the build process can be done in [Magefile.go](../Magefile.go).
+
 ### Testing and Building
 
-//TODO: mage installation + target overview
+To ensure that your changes will not break other functionality, please run the `check` task and
+build process before submitting your Pull Request. You can do it, just run:
 
+```bash
+$ mage check
+```
+
+If you want to build docker driver binary file for testing purpose, just run:
+
+```bash
+$ mage build
+```
