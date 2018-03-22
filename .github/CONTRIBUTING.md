@@ -47,7 +47,8 @@ Now you can keep your forked repository up-to-date with the upstream repository 
 and push to your repository with `git push`. See [GitHub Help](https://help.github.com/articles/syncing-a-fork/)
 for more details.
 
-The project uses [Mage](https://magefile.org/) as build tool instead of make, so first install mage:
+The project uses [Mage](https://magefile.org/) as build tool instead of make, so if you start working
+ with our project, then **first install mage**:
 
 ```bash
 $ go get -u github.com/magefile/mage
