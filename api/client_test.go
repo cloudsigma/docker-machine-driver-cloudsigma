@@ -150,7 +150,7 @@ func TestClient_NewRequest_baseURLWithoutTrailingSlash(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestClient_NewRequest_invalidUrlString(t *testing.T) {
+func TestClient_NewRequest_invalidRequestURL(t *testing.T) {
 	client := NewBasicAuthClient("user", "password")
 	client.BaseURL, _ = url.Parse("/")
 
