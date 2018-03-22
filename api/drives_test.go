@@ -13,6 +13,7 @@ func TestDrives_Get(t *testing.T) {
 	defer teardown()
 	mux.HandleFunc("/drives/long-uuid", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "GET", r.Method)
+		assert.Equal(t, authorizationHeader, r.Header.Get("Authorization"))
 		fmt.Fprint(w, `{"name":"my drive","size":1000,"uuid":"long-uuid"}`)
 	})
 	expected := &Drive{
