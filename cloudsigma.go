@@ -384,7 +384,7 @@ func (d *Driver) createServer() (*api.Server, error) {
 	}
 
 	log.Debug("Attaching existing drive to virtual server...")
-	server, _, err = client.Servers.AttachDrive(server, attachDriveRequest)
+	server, _, err = client.Servers.AttachDrive(server.UUID, attachDriveRequest)
 	if err != nil {
 		return server, err
 	}

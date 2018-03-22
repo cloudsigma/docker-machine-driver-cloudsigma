@@ -170,12 +170,15 @@ func (s *ServersService) Delete(uuid string) (*http.Response, error) {
 // ServerDrive edits a server with attaching drives to it.
 //
 // CloudSigma API docs: https://cloudsigma-docs.readthedocs.io/en/latest/servers.html#attach-a-drive
-func (s *ServersService) AttachDrive(server *Server, attachDriveRequest *AttachDriveRequest) (*Server, *http.Response, error) {
-	if server == nil || attachDriveRequest == nil {
+func (s *ServersService) AttachDrive(serverUUID string, attachDriveRequest *AttachDriveRequest) (*Server, *http.Response, error) {
+	if serverUUID == "" {
+		return nil, nil, ErrEmptyArgument
+	}
+	if attachDriveRequest == nil {
 		return nil, nil, ErrEmptyPayloadNotAllowed
 	}
 
-	path := fmt.Sprintf("%v/%v/", serverBasePath, server.UUID)
+	path := fmt.Sprintf("%v/%v/", serverBasePath, serverUUID)
 
 	req, err := s.client.NewRequest(http.MethodPut, path, attachDriveRequest)
 	if err != nil {
