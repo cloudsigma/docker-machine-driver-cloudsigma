@@ -414,7 +414,6 @@ func (d *Driver) startServer() error {
 	d.IPAddress = ""
 	log.Debug("Waiting for IP address to be assigned to the server...")
 	for {
-		//TODO: add max-retry-count logic
 		server, _, err = client.Servers.Get(d.ServerUUID)
 		if err != nil {
 			return nil
