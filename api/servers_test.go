@@ -108,11 +108,11 @@ func TestServers_Create_emptyPayload(t *testing.T) {
 func TestServers_Delete(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
-	mux.HandleFunc("/servers/some-uuid/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/servers/long-uuid/", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "DELETE", r.Method)
 	})
 
-	_, err := client.Servers.Delete("some-uuid")
+	_, err := client.Servers.Delete("long-uuid")
 
 	assert.NoError(t, err)
 }
