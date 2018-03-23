@@ -89,7 +89,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			EnvVar: "CLOUDSIGMA_API_LOCATION",
 			Name:   "cloudsigma-api-location",
-			Usage:  "CloudSigma API location endpoint",
+			Usage:  "CloudSigma API location endpoint code",
 		},
 		mcnflag.IntFlag{
 			EnvVar: "CLOUDSIGMA_CPU",
