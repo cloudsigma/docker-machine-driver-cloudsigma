@@ -50,6 +50,22 @@ If you encounter any troubles, activate the debug mode with `docker-machine --de
 | **`--cloudsigma-username`** | `CLOUDSIGMA_USERNAME`     | -                                      |
 
 
+## Frequently Asked Questions
+
+#### I get error after restarting the docker machine
+
+If you do not use `--cloudsigma-static-ip` option, then your machine will become always a new IP
+address after restarting. You will see something like that by running `docker-machine ls` command:
+
+```bash
+$ docker-machine ls
+NAME   ACTIVE  DRIVER      STATE    URL                   SWARM    DOCKER    ERRORS
+my vm  -       cloudsigma  Running  tcp://185.x.x.x:2376  Unknown  Unable to query docker version: Get https://185.x.x.x:2376/v1.15/version: x509: certificate is valid for 31.x.x.x, not 185.x.x.x
+```
+
+In this case you should regenerate certificates with `docker-machine regenerate-certs`.
+
+
 ## Contributing
 
 We hope you'll get involved! Read our [Contributors' Guide](.github/CONTRIBUTING.md) for details.
