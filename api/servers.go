@@ -75,12 +75,13 @@ type AttachDriveRequest struct {
 }
 
 type ServerCreateRequest struct {
-	CPU         int      `json:"cpu"`
-	Memory      int      `json:"mem"`
-	Name        string   `json:"name"`
-	VNCPassword string   `json:"vnc_password"`
-	NICS        []NIC    `json:"nics,omitempty"`
-	PublicKeys  []string `json:"pubkeys,omitempty"`
+	CPU                 int      `json:"cpu"`
+	CPUEnclavePageCache string   `json:"cpu_epc,omitempty"`
+	Memory              int      `json:"mem"`
+	Name                string   `json:"name"`
+	VNCPassword         string   `json:"vnc_password"`
+	NICS                []NIC    `json:"nics,omitempty"`
+	PublicKeys          []string `json:"pubkeys,omitempty"`
 }
 
 type NIC struct {

@@ -26,16 +26,17 @@ const (
 
 type Driver struct {
 	*drivers.BaseDriver
-	APILocation string
-	CPU         int
-	DriveSize   int
-	DriveUUID   string
-	Memory      int
-	Password    string
-	ServerUUID  string
-	SSHKeyUUID  string
-	StaticIP    string
-	Username    string
+	APILocation         string
+	CPU                 int
+	CPUEnclavePageCache string
+	DriveSize           int
+	DriveUUID           string
+	Memory              int
+	Password            string
+	ServerUUID          string
+	SSHKeyUUID          string
+	StaticIP            string
+	Username            string
 }
 
 func NewDriver(hostName, storePath string) *Driver {
@@ -96,6 +97,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "cloudsigma-cpu",
 			Usage:  "CPU clock speed for the host in MHz",
 			Value:  defaultCPU,
+		},
+		mcnflag.StringFlag{
+			EnvVar: "CLOUDSIGMA_CPU_EPC_SIZE",
+			Name:   "cloudsigma-cpu-epc-size",
+			Usage:  "TODO: description for cloudsigma-cpu-epc-size",
 		},
 		mcnflag.IntFlag{
 			EnvVar: "CLOUDSIGMA_DRIVE_SIZE",
@@ -250,6 +256,7 @@ func (d *Driver) Restart() error {
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.APILocation = flags.String("cloudsigma-api-location")
 	d.CPU = flags.Int("cloudsigma-cpu")
+	d.CPUEnclavePageCache = flags.String("cloudsigma-cpu-epc-size")
 	d.DriveSize = flags.Int("cloudsigma-drive-size")
 	d.DriveUUID = flags.String("cloudsigma-drive-uuid")
 	d.Memory = flags.Int("cloudsigma-memory")
@@ -363,6 +370,12 @@ func (d *Driver) createServer() (*api.Server, error) {
 			Configuration: "static",
 			IP:            d.StaticIP,
 		}
+	}
+
+	if d.CPUEnclavePageCache != "" {
+		log.Debugf("CPU enclave page cache is defined %s, use it by server creation.", d.CPUEnclavePageCache)
+
+		serverCreateRequest.CPUEnclavePageCache = d.CPUEnclavePageCache
 	}
 
 	log.Debug("Creating CloudSigma virtual server...")

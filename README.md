@@ -25,6 +25,7 @@ If you encounter any troubles, activate the debug mode with `docker-machine --de
 
 - `--cloudsigma-api-location`: CloudSigma API location endpoint [code](http://cloudsigma-docs.readthedocs.io/en/latest/general.html#api-endpoint).
 - `--cloudsigma-cpu`: CPU clock speed for the host in MHz.
+- `--cloudsigma-cpu-epc-size`: TODO: description for cloudsigma-cpu-epc-size.
 - `--cloudsigma-drive-size`: Drive size for the host in GiB.
 - `--cloudsigma-drive-uuid`: CloudSigma drive uuid.
 - `--cloudsigma-memory`: Size of memory for the host in MB.
@@ -40,6 +41,7 @@ If you encounter any troubles, activate the debug mode with `docker-machine --de
 | --------------------------- | ------------------------- | -------------------------------------- |
 | `--cloudsigma-api-location` | `CLOUDSIGMA_API_LOCATION` | `zrh`                                  |
 | `--cloudsigma-cpu`          | `CLOUDSIGMA_CPU`          | `2000`                                 |
+| `--cloudsigma-cpu-epc-size` | `CLOUDSIGMA_CPU_EPC_SIZE` | -                                      |
 | `--cloudsigma-drive-size`   | `CLOUDSIGMA_DRIVE_SIZE`   | `20`                                   |
 | `--cloudsigma-drive-uuid`   | `CLOUDSIGMA_DRIVE_UUID`   | `6fe24a6b-b5c5-40ba-8860-771044d2500d` |
 | `--cloudsigma-memory`       | `CLOUDSIGMA_MEMORY`       | `1024`                                 |
