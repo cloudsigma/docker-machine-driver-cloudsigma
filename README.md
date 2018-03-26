@@ -52,7 +52,7 @@ If you encounter any troubles, activate the debug mode with `docker-machine --de
 
 ## Frequently Asked Questions
 
-#### I get error after restarting the docker machine
+### I get error after restarting the docker machine
 
 If you do not use `--cloudsigma-static-ip` option, then your machine will become always a new IP
 address after restarting. You will see something like that by running `docker-machine ls` command:
