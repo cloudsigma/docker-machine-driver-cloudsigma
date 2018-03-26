@@ -56,7 +56,7 @@ func (d *Driver) Create() error {
 	d.SSHKeyUUID = key.UUID
 
 	log.Info("Cloning library drive...")
-	drive, err := d.cloneDrive(defaultDriveUUID)
+	drive, err := d.cloneDrive(d.DriveUUID)
 	if err != nil {
 		return err
 	}
