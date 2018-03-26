@@ -54,6 +54,8 @@ The project uses [Mage](https://magefile.org/) as build tool instead of make, so
 $ go get -u github.com/magefile/mage
 ```
 
+Please note that minimum version for building the CloudSigma driver is **Go 1.9 or higher**.
+
 ### Build Tasks
 
 The project has predefined the following tasks:
