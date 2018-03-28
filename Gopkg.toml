@@ -1,11 +1,11 @@
-[[constraint]]
-  name = "github.com/docker/machine"
-  version = "=v0.13.0"
-
 [prune]
   go-tests = true
   non-go = true
   unused-packages = true
+
+[[constraint]]
+  name = "github.com/docker/machine"
+  version = "=v0.13.0"
 
 [[constraint]]
   name = "github.com/stretchr/testify"

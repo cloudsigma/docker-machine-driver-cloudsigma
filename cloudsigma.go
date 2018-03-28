@@ -101,7 +101,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			EnvVar: "CLOUDSIGMA_CPU_EPC_SIZE",
 			Name:   "cloudsigma-cpu-epc-size",
-			Usage:  "TODO: description for cloudsigma-cpu-epc-size",
+			Usage:  "Enclave Page Cache (EPC) size",
 		},
 		mcnflag.IntFlag{
 			EnvVar: "CLOUDSIGMA_DRIVE_SIZE",
