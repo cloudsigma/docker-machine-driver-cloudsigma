@@ -1,0 +1,26 @@
+sudo: false
+language: go
+
+go:
+  - "1.10"
+
+cache:
+  directories:
+    - vendor
+
+install: "go get -u github.com/magefile/mage"
+
+script: "mage check"
+
+before_deploy: "mage clean release"
+deploy:
+  provider: releases
+  api_key:
+    secure: <INSERT-API-KEY-HERE>
+  skip_cleanup: true
+  file_glob: true
+  file: build/*
+  on:
+    branch: master
+    repo: cloudsigma/docker-machine-driver-cloudsigma
+    tags: true
