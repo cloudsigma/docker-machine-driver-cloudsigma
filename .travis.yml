@@ -16,7 +16,7 @@ before_deploy: "mage clean release"
 deploy:
   provider: releases
   api_key:
-    secure: <INSERT-API-KEY-HERE>
+    secure: jqTvszfaYSXAfttYAkqoY1yMoZp+ddZ0cjJGWFUUy+Fo6gPYoELDC/nY8hiECoM6ZS1QT5ykAQS3QvleGXkEgZp4wEKNnrnaBoirhwvewCDi3ZceT6PCCtKBHsp0k7XU4md0Tx4Ys9BRxgojD9N1q55sJ2kKn7 
   skip_cleanup: true
   file_glob: true
   file: build/*
