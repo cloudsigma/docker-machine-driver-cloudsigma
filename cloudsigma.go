@@ -17,6 +17,7 @@ import (
 
 const (
 	defaultCPU       = 2000
+	defaultCPUType   = "intel"
 	defaultDriveSize = 20
 	defaultDriveUUID = "6fe24a6b-b5c5-40ba-8860-771044d2500d"
 	defaultMemory    = 1024
@@ -28,6 +29,7 @@ type Driver struct {
 	*drivers.BaseDriver
 	APILocation         string
 	CPU                 int
+	CPUType		    string
 	CPUEnclavePageCache string
 	DriveSize           int
 	DriveUUID           string
@@ -97,6 +99,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "cloudsigma-cpu",
 			Usage:  "CPU clock speed for the host in MHz",
 			Value:  defaultCPU,
+		},
+		mcnflag.StringFlag{
+			EnvVar: "CLOUDSIGMA_CPU_TYPE",
+			Name:	"cloudsigma-cpu-type",
+			Usage:	"CPU type",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "CLOUDSIGMA_CPU_EPC_SIZE",
@@ -256,6 +263,7 @@ func (d *Driver) Restart() error {
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.APILocation = flags.String("cloudsigma-api-location")
 	d.CPU = flags.Int("cloudsigma-cpu")
+	d.CPUType = flags.String("cloudsigma-cpu-type")
 	d.CPUEnclavePageCache = flags.String("cloudsigma-cpu-epc-size")
 	d.DriveSize = flags.Int("cloudsigma-drive-size")
 	d.DriveUUID = flags.String("cloudsigma-drive-uuid")
