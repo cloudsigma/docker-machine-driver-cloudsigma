@@ -25,6 +25,7 @@ If you encounter any troubles, activate the debug mode with `docker-machine --de
 
 - `--cloudsigma-api-location`: CloudSigma API location endpoint [code](http://cloudsigma-docs.readthedocs.io/en/latest/general.html#api-endpoint).
 - `--cloudsigma-cpu`: CPU clock speed for the host in MHz.
+- `--cloudsigma-cpu-type`: CPU type
 - `--cloudsigma-cpu-epc-size`: Enclave Page Cache (EPC) size.
 - `--cloudsigma-drive-size`: Drive size for the host in GiB.
 - `--cloudsigma-drive-uuid`: CloudSigma drive uuid.
