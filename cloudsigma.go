@@ -398,6 +398,7 @@ func (d *Driver) createServer() (*api.Server, error) {
 
 	attachDriveRequest := &api.AttachDriveRequest{
 		CPU: server.CPU,
+		CPUType: server.CPUType,
 		Drives: []api.ServerDrive{
 			{BootOrder: 1, DevChannel: "0:0", Device: "virtio", DriveUUID: d.DriveUUID},
 		},

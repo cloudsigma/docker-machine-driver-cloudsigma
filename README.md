@@ -42,6 +42,7 @@ If you encounter any troubles, activate the debug mode with `docker-machine --de
 | --------------------------- | ------------------------- | -------------------------------------- |
 | `--cloudsigma-api-location` | `CLOUDSIGMA_API_LOCATION` | `zrh`                                  |
 | `--cloudsigma-cpu`          | `CLOUDSIGMA_CPU`          | `2000`                                 |
+| `--cloudsigma-cpu-type`     | `CLOUDSIGMA_CPU_TYPE`     | `intel`                                |
 | `--cloudsigma-cpu-epc-size` | `CLOUDSIGMA_CPU_EPC_SIZE` | -                                      |
 | `--cloudsigma-drive-size`   | `CLOUDSIGMA_DRIVE_SIZE`   | `20`                                   |
 | `--cloudsigma-drive-uuid`   | `CLOUDSIGMA_DRIVE_UUID`   | `6fe24a6b-b5c5-40ba-8860-771044d2500d` |

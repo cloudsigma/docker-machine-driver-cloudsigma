@@ -68,6 +68,7 @@ type ServerAction struct {
 
 type AttachDriveRequest struct {
 	CPU         int           `json:"cpu"`
+	CPUType     string        `json:"cpu_type"`
 	Drives      []ServerDrive `json:"drives"`
 	Memory      int           `json:"mem"`
 	Name        string        `json:"name"`
