@@ -29,7 +29,7 @@ type Driver struct {
 	*drivers.BaseDriver
 	APILocation         string
 	CPU                 int
-	CPUType		    string
+	CPUType             string
 	CPUEnclavePageCache string
 	DriveSize           int
 	DriveUUID           string
@@ -104,6 +104,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "CLOUDSIGMA_CPU_TYPE",
 			Name:	"cloudsigma-cpu-type",
 			Usage:	"CPU type",
+			Value:	defaultCPUType,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "CLOUDSIGMA_CPU_EPC_SIZE",
@@ -362,6 +363,7 @@ func (d *Driver) cloneDrive(uuid string) (*api.Drive, error) {
 func (d *Driver) createServer() (*api.Server, error) {
 	serverCreateRequest := &api.ServerCreateRequest{
 		CPU:    d.CPU,
+		CPUType: d.CPUType,
 		Memory: d.Memory * 1024 * 1024,
 		Name:   d.MachineName,
 		NICS: []api.NIC{

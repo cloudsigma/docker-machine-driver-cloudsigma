@@ -16,7 +16,7 @@ type ServersService service
 // Server represents a CloudSigma server.
 type Server struct {
 	CPU         int           `json:"cpu"`
-	CPUType     string        `json:"cpu_type,omitempty"`
+	CPUType     string        `json:"cpu_type"`
 	Drives      []ServerDrive `json:"drive,omitempty"`
 	Memory      int           `json:"mem"`
 	Name        string        `json:"name"`
@@ -76,7 +76,7 @@ type AttachDriveRequest struct {
 
 type ServerCreateRequest struct {
 	CPU                 int      `json:"cpu"`
-	CPUType		    string   `json:"cpu_type,omitempty"`
+	CPUType             string   `json:"cpu_type"`
 	CPUEnclavePageCache string   `json:"cpu_epc,omitempty"`
 	Memory              int      `json:"mem"`
 	Name                string   `json:"name"`
