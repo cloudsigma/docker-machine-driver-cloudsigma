@@ -23,11 +23,11 @@ func setup() (client *Client, mux *http.ServeMux, serverURL string, teardown fun
 	apiHandler := http.NewServeMux()
 	apiHandler.Handle("/api/2.0/", http.StripPrefix("/api/2.0", mux))
 	apiHandler.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		fmt.Fprintln(os.Stderr, "FAIL: Client.BaseURL path prefix is not preserved in the request URL:")
-		fmt.Fprintln(os.Stderr)
-		fmt.Fprintln(os.Stderr, "\t"+req.URL.String())
-		fmt.Fprintln(os.Stderr)
-		fmt.Fprintln(os.Stderr, "\tDid you accidentally use an absolute endpoint URL rather then relative?")
+		_, _ = fmt.Fprintln(os.Stderr, "FAIL: Client.BaseURL path prefix is not preserved in the request URL:")
+		_, _ = fmt.Fprintln(os.Stderr)
+		_, _ = fmt.Fprintln(os.Stderr, "\t"+req.URL.String())
+		_, _ = fmt.Fprintln(os.Stderr)
+		_, _ = fmt.Fprintln(os.Stderr, "\tDid you accidentally use an absolute endpoint URL rather then relative?")
 		http.Error(w, "client.BaseURL path prefix is not preserved in the request URL.", http.StatusInternalServerError)
 	})
 	server := httptest.NewServer(apiHandler)
@@ -100,12 +100,12 @@ func TestClient_Do(t *testing.T) {
 	}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "GET", r.Method)
-		fmt.Fprint(w, `{"A":"a"}`)
+		_, _ = fmt.Fprint(w, `{"A":"a"}`)
 	})
 	req, _ := client.NewRequest("GET", ".", nil)
 	body := new(foo)
 
-	client.Do(req, body)
+	_, _ = client.Do(req, body)
 	expected := &foo{"a"}
 
 	assert.Equal(t, body, expected)

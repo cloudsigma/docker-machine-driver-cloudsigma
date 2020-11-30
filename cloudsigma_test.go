@@ -113,7 +113,7 @@ func TestCloudsigma_PreCreateCheck_InvalidIPAddress(t *testing.T) {
 		CreateFlags: driver.GetCreateFlags(),
 	}
 
-	driver.SetConfigFromFlags(checkFlags)
+	_ = driver.SetConfigFromFlags(checkFlags)
 	err := driver.PreCreateCheck()
 
 	assert.Error(t, err)

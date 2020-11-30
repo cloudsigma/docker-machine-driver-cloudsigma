@@ -19,12 +19,12 @@ func TestKeypairs_Create(t *testing.T) {
 	}
 	mux.HandleFunc("/keypairs/", func(w http.ResponseWriter, r *http.Request) {
 		v := new(KeypairCreateRequest)
-		json.NewDecoder(r.Body).Decode(v)
+		_ = json.NewDecoder(r.Body).Decode(v)
 		assert.Equal(t, input, v)
 
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, authorizationHeader, r.Header.Get("Authorization"))
-		fmt.Fprint(w, `{"objects":[{"name":"uploaded key","public_key":"long-long-public-key"}]}`)
+		_, _ = fmt.Fprint(w, `{"objects":[{"name":"uploaded key","public_key":"long-long-public-key"}]}`)
 	})
 	expected := &Keypair{
 		Name:      "uploaded key",
@@ -84,7 +84,7 @@ func TestKeypairs_Get(t *testing.T) {
 	mux.HandleFunc("/keypairs/long-uuid", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "GET", r.Method)
 		assert.Equal(t, authorizationHeader, r.Header.Get("Authorization"))
-		fmt.Fprint(w, `{"name":"generated ssh keypair","uuid":"long-uuid"}`)
+		_, _ = fmt.Fprint(w, `{"name":"generated ssh keypair","uuid":"long-uuid"}`)
 	})
 	expected := &Keypair{
 		Name: "generated ssh keypair",
