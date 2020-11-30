@@ -111,8 +111,7 @@ func (c *Client) Do(req *http.Request, v interface{}) (*http.Response, error) {
 	}
 
 	defer func() {
-		io.CopyN(ioutil.Discard, resp.Body, 512)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}()
 
 	err = CheckResponse(resp)

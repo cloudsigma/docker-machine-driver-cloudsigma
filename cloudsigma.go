@@ -102,9 +102,9 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.StringFlag{
 			EnvVar: "CLOUDSIGMA_CPU_TYPE",
-			Name:	"cloudsigma-cpu-type",
-			Usage:	"CPU type",
-			Value:	defaultCPUType,
+			Name:   "cloudsigma-cpu-type",
+			Usage:  "CPU type",
+			Value:  defaultCPUType,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "CLOUDSIGMA_CPU_EPC_SIZE",
@@ -362,10 +362,10 @@ func (d *Driver) cloneDrive(uuid string) (*api.Drive, error) {
 
 func (d *Driver) createServer() (*api.Server, error) {
 	serverCreateRequest := &api.ServerCreateRequest{
-		CPU:    d.CPU,
+		CPU:     d.CPU,
 		CPUType: d.CPUType,
-		Memory: d.Memory * 1024 * 1024,
-		Name:   d.MachineName,
+		Memory:  d.Memory * 1024 * 1024,
+		Name:    d.MachineName,
 		NICS: []api.NIC{
 			{IPv4Configuration: api.IPConfiguration{Configuration: "dhcp"}, Model: "virtio"},
 		},
@@ -397,7 +397,7 @@ func (d *Driver) createServer() (*api.Server, error) {
 	}
 
 	attachDriveRequest := &api.AttachDriveRequest{
-		CPU: server.CPU,
+		CPU:     server.CPU,
 		CPUType: server.CPUType,
 		Drives: []api.ServerDrive{
 			{BootOrder: 1, DevChannel: "0:0", Device: "virtio", DriveUUID: d.DriveUUID},

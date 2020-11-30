@@ -19,12 +19,12 @@ func TestServers_AttachDrive(t *testing.T) {
 	}
 	mux.HandleFunc("/servers/long-uuid/", func(w http.ResponseWriter, r *http.Request) {
 		v := new(AttachDriveRequest)
-		json.NewDecoder(r.Body).Decode(v)
+		_ = json.NewDecoder(r.Body).Decode(v)
 		assert.Equal(t, input, v)
 
 		assert.Equal(t, "PUT", r.Method)
 		assert.Equal(t, authorizationHeader, r.Header.Get("Authorization"))
-		fmt.Fprint(w, `{"cpu":100,"mem":200}`)
+		_, _ = fmt.Fprint(w, `{"cpu":100,"mem":200}`)
 	})
 	expected := &Server{
 		CPU:    100,
@@ -77,12 +77,12 @@ func TestServers_Create(t *testing.T) {
 	}
 	mux.HandleFunc("/servers/", func(w http.ResponseWriter, r *http.Request) {
 		v := new(ServerCreateRequest)
-		json.NewDecoder(r.Body).Decode(v)
+		_ = json.NewDecoder(r.Body).Decode(v)
 		assert.Equal(t, input, v)
 
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, authorizationHeader, r.Header.Get("Authorization"))
-		fmt.Fprint(w, `{"objects":[{"cpu":100,"mem":300}]}`)
+		_, _ = fmt.Fprint(w, `{"objects":[{"cpu":100,"mem":300}]}`)
 	})
 	expected := &Server{
 		CPU:    100,
@@ -141,7 +141,7 @@ func TestServers_doAction(t *testing.T) {
 	defer teardown()
 	mux.HandleFunc("/servers/long-uuid/", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "POST", r.Method)
-		fmt.Fprint(w, `{"action":"start","result":"server is starting","uuid":"uuid"}`)
+		_, _ = fmt.Fprint(w, `{"action":"start","result":"server is starting","uuid":"uuid"}`)
 	})
 
 	_, _, err := client.Servers.doAction("long-uuid", "start")
@@ -174,7 +174,7 @@ func TestServers_Get(t *testing.T) {
 	mux.HandleFunc("/servers/long-uuid", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "GET", r.Method)
 		assert.Equal(t, authorizationHeader, r.Header.Get("Authorization"))
-		fmt.Fprint(w, `{"cpu":100,"mem":200,"name":"test server","resource_uri":"1234-5678","uuid":"long-uuid"}`)
+		_, _ = fmt.Fprint(w, `{"cpu":100,"mem":200,"name":"test server","resource_uri":"1234-5678","uuid":"long-uuid"}`)
 	})
 	expected := &Server{
 		CPU:         100,
