@@ -1,5 +1,9 @@
 # Docker Machine CloudSigma Driver
 
+[![Release](https://img.shields.io/github/v/tag/cloudsigma/docker-machine-driver-cloudsigma?label=release)](https://github.com/cloudsigma/docker-machine-driver-cloudsigma/releases)
+[![License](https://img.shields.io/github/license/cloudsigma/docker-machine-driver-cloudsigma.svg)](https://github.com/cloudsigma/docker-machine-driver-cloudsigma/blob/master/LICENSE)
+[![Unit Tests](https://github.com/cloudsigma/docker-machine-driver-cloudsigma/workflows/unit%20tests/badge.svg)](https://github.com/cloudsigma/docker-machine-driver-cloudsigma/actions)
+
 Create Docker machines on [CloudSigma](https://www.cloudsigma.com/).
 
 You need to use your e-mail address as username and password and pass that to
