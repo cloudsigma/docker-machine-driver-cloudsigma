@@ -1,12 +1,14 @@
 package cloudsigma
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"time"
 
+	"github.com/cloudsigma/cloudsigma-sdk-go/cloudsigma"
 	"github.com/cloudsigma/docker-machine-driver-cloudsigma/api"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
@@ -17,7 +19,7 @@ import (
 
 const (
 	defaultCPU       = 2000
-	defaultCPUType   = "intel"
+	defaultCPUType   = "amd"
 	defaultDriveSize = 20
 	defaultDriveUUID = "6fe24a6b-b5c5-40ba-8860-771044d2500d"
 	defaultMemory    = 1024
@@ -233,12 +235,9 @@ func (d *Driver) Remove() error {
 	}
 
 	log.Info("Deleting SSH key...")
-	if resp, err := client.Keypairs.Delete(d.SSHKeyUUID); err != nil {
-		if resp.StatusCode == http.StatusNotFound {
-			log.Info("SSH key doesn't exist, assuming it is already deleted")
-		} else {
-			return err
-		}
+	err = d.deleteSSHKey()
+	if err != nil {
+		return err
 	}
 
 	log.Infof("Deleting CloudSigma server...")
@@ -302,7 +301,16 @@ func (d *Driver) getClient() *api.Client {
 	return client
 }
 
-func (d *Driver) createSSHKey() (*api.Keypair, error) {
+func (d *Driver) getSDKClient() *cloudsigma.Client {
+	client := cloudsigma.NewBasicAuthClient(d.Username, d.Password)
+	if d.APILocation != "" {
+		client.SetLocation(d.APILocation)
+	}
+	client.SetUserAgent("docker-machine-driver-cloudsigma")
+	return client
+}
+
+func (d *Driver) createSSHKey() (*cloudsigma.Keypair, error) {
 	d.SSHKeyPath = d.GetSSHKeyPath()
 
 	if err := ssh.GenerateSSHKey(d.SSHKeyPath); err != nil {
@@ -314,18 +322,33 @@ func (d *Driver) createSSHKey() (*api.Keypair, error) {
 		return nil, err
 	}
 
-	keypairCreateRequest := &api.KeypairCreateRequest{
-		Keypairs: []api.Keypair{
+	keypairCreateRequest := &cloudsigma.KeypairCreateRequest{
+		Keypairs: []cloudsigma.Keypair{
 			{Name: d.MachineName, PublicKey: string(publicKey)},
 		},
 	}
 
-	key, _, err := d.getClient().Keypairs.Create(keypairCreateRequest)
+	keypairs, _, err := d.getSDKClient().Keypairs.Create(context.Background(), keypairCreateRequest)
 	if err != nil {
-		return key, err
+		return nil, err
 	}
 
-	return key, nil
+	return &keypairs[0], nil
+}
+
+func (d *Driver) deleteSSHKey() error {
+	sshKeyUUID := d.SSHKeyUUID
+
+	resp, err := d.getSDKClient().Keypairs.Delete(context.Background(), sshKeyUUID)
+	if err != nil {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			log.Info("SSH key doesn't exist, assuming it is already deleted")
+		} else {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (d *Driver) cloneDrive(uuid string) (*api.Drive, error) {

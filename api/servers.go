@@ -154,7 +154,7 @@ func (s *ServersService) Create(serverCreateRequest *ServerCreateRequest) (*Serv
 
 // Delete removes a server together with it's all attached drives (recursive delete).
 //
-//CloudSigma API docs: https://cloudsigma-docs.readthedocs.io/en/latest/servers.html#delete-server-together-with-attached-drives-recursive-delete
+// CloudSigma API docs: https://cloudsigma-docs.readthedocs.io/en/latest/servers.html#delete-server-together-with-attached-drives-recursive-delete
 func (s *ServersService) Delete(uuid string) (*http.Response, error) {
 	if uuid == "" {
 		return nil, ErrEmptyArgument
