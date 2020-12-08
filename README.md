@@ -31,6 +31,7 @@ If you encounter any troubles, activate the debug mode with `docker-machine --de
 - `--cloudsigma-cpu`: CPU clock speed for the host in MHz.
 - `--cloudsigma-cpu-type`: CPU type
 - `--cloudsigma-cpu-epc-size`: Enclave Page Cache (EPC) size.
+- `--cloudsigma-driver-name`: CloudSigma drive name (latest version will be used).
 - `--cloudsigma-drive-size`: Drive size for the host in GiB.
 - `--cloudsigma-drive-uuid`: CloudSigma drive uuid.
 - `--cloudsigma-memory`: Size of memory for the host in MB.
@@ -46,10 +47,11 @@ If you encounter any troubles, activate the debug mode with `docker-machine --de
 | --------------------------- | ------------------------- | -------------------------------------- |
 | `--cloudsigma-api-location` | `CLOUDSIGMA_API_LOCATION` | `zrh`                                  |
 | `--cloudsigma-cpu`          | `CLOUDSIGMA_CPU`          | `2000`                                 |
-| `--cloudsigma-cpu-type`     | `CLOUDSIGMA_CPU_TYPE`     | `intel`                                |
+| `--cloudsigma-cpu-type`     | `CLOUDSIGMA_CPU_TYPE`     | -                                      |
 | `--cloudsigma-cpu-epc-size` | `CLOUDSIGMA_CPU_EPC_SIZE` | -                                      |
+| `--cloudsigma-drive-name`   | `CLOUDSIGMA_DRIVE_NAME`   | `ubuntu`                               |
 | `--cloudsigma-drive-size`   | `CLOUDSIGMA_DRIVE_SIZE`   | `20`                                   |
-| `--cloudsigma-drive-uuid`   | `CLOUDSIGMA_DRIVE_UUID`   | `6fe24a6b-b5c5-40ba-8860-771044d2500d` |
+| `--cloudsigma-drive-uuid`   | `CLOUDSIGMA_DRIVE_UUID`   | ``                                     |
 | `--cloudsigma-memory`       | `CLOUDSIGMA_MEMORY`       | `1024`                                 |
 | **`--cloudsigma-password`** | `CLOUDSIGMA_PASSWORD`     | -                                      |
 | `--cloudsigma-ssh-port`     | `CLOUDSIGMA_SSH_PORT`     | `22`                                   |
