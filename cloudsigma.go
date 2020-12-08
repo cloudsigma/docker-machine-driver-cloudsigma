@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/cloudsigma/cloudsigma-sdk-go/cloudsigma"
@@ -21,7 +22,6 @@ const (
 	defaultCPU       = 2000
 	defaultDriveName = "ubuntu"
 	defaultDriveSize = 20
-	defaultDriveUUID = "6fe24a6b-b5c5-40ba-8860-771044d2500d"
 	defaultMemory    = 1024
 	defaultSSHPort   = 22
 	defaultSSHUser   = "cloudsigma"
@@ -30,9 +30,11 @@ const (
 type Driver struct {
 	*drivers.BaseDriver
 	APILocation         string
+	ClonedDriveUUID     string
 	CPU                 int
 	CPUType             string
 	CPUEnclavePageCache string
+	DriveName           string
 	DriveSize           int
 	DriveUUID           string
 	Memory              int
@@ -60,12 +62,12 @@ func (d *Driver) Create() error {
 	}
 	d.SSHKeyUUID = key.UUID
 
-	log.Info("Cloning library drive...")
-	drive, err := d.cloneDrive(d.DriveUUID)
+	log.Info("Cloning CloudSigma library drive...")
+	drive, err := d.cloneLibraryDrive()
 	if err != nil {
 		return err
 	}
-	d.DriveUUID = drive.UUID
+	d.ClonedDriveUUID = drive.UUID
 
 	log.Info("Creating CloudSigma server...")
 	server, err := d.createServer()
@@ -80,7 +82,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Debugf("Created server UUID %v, drive UUID %v, IP address %v", d.ServerUUID, d.DriveUUID, d.IPAddress)
+	log.Debugf("Created server UUID %v, drive UUID %v, IP address %v", d.ServerUUID, d.ClonedDriveUUID, d.IPAddress)
 
 	return nil
 }
@@ -106,12 +108,17 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "CLOUDSIGMA_CPU_TYPE",
 			Name:   "cloudsigma-cpu-type",
 			Usage:  "CPU type",
-			Value:  defaultCPUType,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "CLOUDSIGMA_CPU_EPC_SIZE",
 			Name:   "cloudsigma-cpu-epc-size",
 			Usage:  "Enclave Page Cache (EPC) size",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "CLOUDSIGMA_DRIVE_NAME",
+			Name:   "cloudsigma-drive-name",
+			Usage:  "CloudSigma drive name",
+			Value:  defaultDriveName,
 		},
 		mcnflag.IntFlag{
 			EnvVar: "CLOUDSIGMA_DRIVE_SIZE",
@@ -123,7 +130,6 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "CLOUDSIGMA_DRIVE_UUID",
 			Name:   "cloudsigma-drive-uuid",
 			Usage:  "CloudSigma drive uuid",
-			Value:  defaultDriveUUID,
 		},
 		mcnflag.IntFlag{
 			EnvVar: "CLOUDSIGMA_MEMORY",
@@ -265,6 +271,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.CPU = flags.Int("cloudsigma-cpu")
 	d.CPUType = flags.String("cloudsigma-cpu-type")
 	d.CPUEnclavePageCache = flags.String("cloudsigma-cpu-epc-size")
+	d.DriveName = flags.String("cloudsigma-drive-name")
 	d.DriveSize = flags.Int("cloudsigma-drive-size")
 	d.DriveUUID = flags.String("cloudsigma-drive-uuid")
 	d.Memory = flags.Int("cloudsigma-memory")
@@ -280,6 +287,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	if d.Password == "" {
 		return fmt.Errorf("cloudsigma driver requires the --cloudsigma-password option")
+	}
+
+	if d.DriveName != "" && d.DriveUUID != "" {
+		return fmt.Errorf("--cloudsigma-drive-name and --cloudsigma-drive-uuid are mutually exclusive")
 	}
 
 	return nil
@@ -324,7 +335,7 @@ func (d *Driver) createSSHKey() (*cloudsigma.Keypair, error) {
 
 	keypairCreateRequest := &cloudsigma.KeypairCreateRequest{
 		Keypairs: []cloudsigma.Keypair{
-			{Name: d.MachineName, PublicKey: string(publicKey)},
+			{Name: d.MachineName, PublicKey: strings.TrimRight(string(publicKey), "\r\n")},
 		},
 	}
 
@@ -351,24 +362,69 @@ func (d *Driver) deleteSSHKey() error {
 	return nil
 }
 
-func (d *Driver) cloneDrive(uuid string) (*api.Drive, error) {
-	driveCloneRequest := &api.DriveCloneRequest{
-		Name:        d.MachineName,
-		Size:        d.DriveSize * 1024 * 1024 * 1024,
-		StorageType: "dssd",
+func (d *Driver) cloneLibraryDrive() (*cloudsigma.LibraryDrive, error) {
+	client := d.getSDKClient()
+
+	driveUUID := ""
+	if d.DriveName != "" {
+		listOptions := &cloudsigma.LibraryDriveListOptions{
+			NamesContain: []string{d.DriveName},
+			ListOptions:  cloudsigma.ListOptions{Limit: 0},
+		}
+		libraryDrives, _, err := client.LibraryDrives.List(context.Background(), listOptions)
+		if err != nil {
+			return nil, err
+		}
+
+		libdriveVersion := ""
+		libdriveUUID := ""
+		for _, libraryDrive := range libraryDrives {
+			if libraryDrive.ImageType != "preinst" {
+				continue
+			}
+			// exclude Ubuntu 20.10 because there is no stable repo with docker engine
+			// wait until https://github.com/docker/machine/issues/4856 is fixed
+			if strings.Contains(libraryDrive.Name, "Ubuntu 20.10") {
+				log.Debugf("Skip library drive %s (Ubuntu 20.10), because provisioning scripts are not available in stable channel", libraryDrive.UUID)
+				continue
+			}
+
+			if libdriveVersion == "" {
+				libdriveVersion = libraryDrive.Version
+				libdriveUUID = libraryDrive.UUID
+			}
+			if libdriveVersion < libraryDrive.Version {
+				libdriveVersion = libraryDrive.Version
+				libdriveUUID = libraryDrive.UUID
+			}
+		}
+
+		if libdriveUUID == "" {
+			return nil, fmt.Errorf("could not find any library drive with name %s", d.DriveName)
+		}
+		log.Debugf("Found library drive: %s, version: %s, UUID: %s", d.DriveName, libdriveVersion, libdriveUUID)
+
+		driveUUID = libdriveUUID
+	} else {
+		driveUUID = d.DriveUUID
 	}
 
-	client := d.getClient()
-	clonedDrive, _, err := client.LibraryDrives.Clone(uuid, driveCloneRequest)
+	cloneRequest := &cloudsigma.LibraryDriveCloneRequest{
+		LibraryDrive: &cloudsigma.LibraryDrive{
+			Name:        d.MachineName,
+			Size:        d.DriveSize * 1024 * 1024 * 1024,
+			StorageType: "dssd",
+		},
+	}
+	clonedDrive, _, err := client.LibraryDrives.Clone(context.Background(), driveUUID, cloneRequest)
 	if err != nil {
 		return clonedDrive, err
 	}
 
 	log.Debugf("Waiting until cloning process are done...")
 
-	driveUUID := clonedDrive.UUID
 	for {
-		drive, _, err := client.Drives.Get(driveUUID)
+		drive, _, err := client.Drives.Get(context.Background(), clonedDrive.UUID)
 		if err != nil {
 			return clonedDrive, nil
 		}
@@ -423,7 +479,7 @@ func (d *Driver) createServer() (*api.Server, error) {
 	attachDriveRequest := &api.AttachDriveRequest{
 		CPU: server.CPU,
 		Drives: []api.ServerDrive{
-			{BootOrder: 1, DevChannel: "0:0", Device: "virtio", DriveUUID: d.DriveUUID},
+			{BootOrder: 1, DevChannel: "0:0", Device: "virtio", DriveUUID: d.ClonedDriveUUID},
 		},
 		Memory:      server.Memory,
 		Name:        server.Name,
