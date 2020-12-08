@@ -80,6 +80,7 @@ func TestCloudsigma_SetConfigFromFlags_CustomServerParameter(t *testing.T) {
 			"cloudsigma-api-location": "wdc",
 			"cloudsigma-cpu":          1500,
 			"cloudsigma-cpu-epc-size": "8",
+			"cloudsigma-drive-name":   "",
 			"cloudsigma-drive-size":   15,
 			"cloudsigma-drive-uuid":   "generated-uuid",
 			"cloudsigma-memory":       512,
@@ -96,10 +97,28 @@ func TestCloudsigma_SetConfigFromFlags_CustomServerParameter(t *testing.T) {
 	assert.Equal(t, "wdc", driver.APILocation)
 	assert.Equal(t, 1500, driver.CPU)
 	assert.Equal(t, "8", driver.CPUEnclavePageCache)
-	assert.Equal(t, 15, driver.LibraryDriveSize)
+	assert.Equal(t, "", driver.DriveName)
+	assert.Equal(t, 15, driver.DriveSize)
 	assert.Equal(t, "generated-uuid", driver.DriveUUID)
 	assert.Equal(t, 512, driver.Memory)
 	assert.Equal(t, "192.168.0.1", driver.StaticIP)
+}
+
+func TestCloudsigma_SetConfigFromFlags_ExclusiveOptions(t *testing.T) {
+	driver := NewDriver("default", "path")
+	checkFlags := &drivers.CheckDriverOptions{
+		FlagsValues: map[string]interface{}{
+			"cloudsigma-drive-name": "debian",
+			"cloudsigma-drive-uuid": "generated-uuid",
+			"cloudsigma-password":   "password",
+			"cloudsigma-username":   "user@cloudsigma.com",
+		},
+		CreateFlags: driver.GetCreateFlags(),
+	}
+
+	err := driver.SetConfigFromFlags(checkFlags)
+
+	assert.Error(t, err)
 }
 
 func TestCloudsigma_PreCreateCheck_InvalidIPAddress(t *testing.T) {
