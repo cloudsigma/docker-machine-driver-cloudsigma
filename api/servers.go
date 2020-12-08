@@ -68,7 +68,7 @@ type ServerAction struct {
 
 type AttachDriveRequest struct {
 	CPU         int           `json:"cpu"`
-	CPUType     string        `json:"cpu_type"`
+	CPUType     string        `json:"cpu_type,omitempty"`
 	Drives      []ServerDrive `json:"drives"`
 	Memory      int           `json:"mem"`
 	Name        string        `json:"name"`
@@ -77,7 +77,7 @@ type AttachDriveRequest struct {
 
 type ServerCreateRequest struct {
 	CPU                 int      `json:"cpu"`
-	CPUType             string   `json:"cpu_type"`
+	CPUType             string   `json:"cpu_type,omitempty"`
 	CPUEnclavePageCache string   `json:"cpu_epc,omitempty"`
 	Memory              int      `json:"mem"`
 	Name                string   `json:"name"`

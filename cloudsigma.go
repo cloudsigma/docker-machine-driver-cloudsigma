@@ -19,7 +19,7 @@ import (
 
 const (
 	defaultCPU       = 2000
-	defaultCPUType   = "amd"
+	defaultDriveName = "ubuntu"
 	defaultDriveSize = 20
 	defaultDriveUUID = "6fe24a6b-b5c5-40ba-8860-771044d2500d"
 	defaultMemory    = 1024
@@ -380,15 +380,16 @@ func (d *Driver) cloneDrive(uuid string) (*api.Drive, error) {
 		time.Sleep(1 * time.Second)
 	}
 
+	log.Debugf("Created drive UUID %v", clonedDrive.UUID)
+
 	return clonedDrive, nil
 }
 
 func (d *Driver) createServer() (*api.Server, error) {
 	serverCreateRequest := &api.ServerCreateRequest{
-		CPU:     d.CPU,
-		CPUType: d.CPUType,
-		Memory:  d.Memory * 1024 * 1024,
-		Name:    d.MachineName,
+		CPU:    d.CPU,
+		Memory: d.Memory * 1024 * 1024,
+		Name:   d.MachineName,
 		NICS: []api.NIC{
 			{IPv4Configuration: api.IPConfiguration{Configuration: "dhcp"}, Model: "virtio"},
 		},
@@ -420,8 +421,7 @@ func (d *Driver) createServer() (*api.Server, error) {
 	}
 
 	attachDriveRequest := &api.AttachDriveRequest{
-		CPU:     server.CPU,
-		CPUType: server.CPUType,
+		CPU: server.CPU,
 		Drives: []api.ServerDrive{
 			{BootOrder: 1, DevChannel: "0:0", Device: "virtio", DriveUUID: d.DriveUUID},
 		},
