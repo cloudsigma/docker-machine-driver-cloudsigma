@@ -344,7 +344,10 @@ func (d *Driver) createSSHKey() (*cloudsigma.Keypair, error) {
 		return nil, err
 	}
 
-	return &keypairs[0], nil
+	keypair := &keypairs[0]
+	log.Debugf("Created SSH key UUID: %v", keypair.UUID)
+
+	return keypair, nil
 }
 
 func (d *Driver) deleteSSHKey() error {
@@ -468,8 +471,6 @@ func (d *Driver) createServer() (*api.Server, error) {
 		serverCreateRequest.CPUEnclavePageCache = d.CPUEnclavePageCache
 	}
 
-	log.Debug("Creating CloudSigma virtual server...")
-
 	client := d.getClient()
 	server, _, err := client.Servers.Create(serverCreateRequest)
 	if err != nil {
@@ -496,10 +497,10 @@ func (d *Driver) createServer() (*api.Server, error) {
 }
 
 func (d *Driver) startServer() error {
-	client := d.getClient()
+	client := d.getSDKClient()
 
 	log.Debug("Checking server state...")
-	server, _, err := client.Servers.Get(d.ServerUUID)
+	server, _, err := client.Servers.Get(context.Background(), d.ServerUUID)
 	if err != nil {
 		return nil
 	}
@@ -509,7 +510,7 @@ func (d *Driver) startServer() error {
 	}
 
 	log.Debug("Starting CloudSigma virtual server...")
-	_, _, err = client.Servers.Start(d.ServerUUID)
+	_, _, err = client.Servers.Start(context.Background(), d.ServerUUID)
 	if err != nil {
 		return err
 	}
@@ -517,11 +518,17 @@ func (d *Driver) startServer() error {
 	d.IPAddress = ""
 	log.Debug("Waiting for IP address to be assigned to the server...")
 	for {
-		server, _, err = client.Servers.Get(d.ServerUUID)
+		time.Sleep(1 * time.Second)
+
+		server, _, err = client.Servers.Get(context.Background(), d.ServerUUID)
 		if err != nil {
 			return nil
 		}
-		for _, nic := range server.Runtime.RuntimeNICS {
+		if server.Runtime == nil {
+			continue
+		}
+
+		for _, nic := range server.Runtime.RuntimeNICs {
 			if nic.InterfaceType == "public" {
 				d.IPAddress = nic.IPv4.UUID
 			}
@@ -529,17 +536,16 @@ func (d *Driver) startServer() error {
 		if d.IPAddress != "" && server.Status == "running" {
 			break
 		}
-		time.Sleep(1 * time.Second)
 	}
 
 	return nil
 }
 
 func (d *Driver) stopServer() error {
-	client := d.getClient()
+	client := d.getSDKClient()
 
 	log.Debug("Checking server state...")
-	server, _, err := client.Servers.Get(d.ServerUUID)
+	server, _, err := client.Servers.Get(context.Background(), d.ServerUUID)
 	if err != nil {
 		return nil
 	}
@@ -548,15 +554,15 @@ func (d *Driver) stopServer() error {
 		return nil
 	}
 
-	log.Debug("Stopping CloudSigma virtual server...")
-	_, _, err = client.Servers.Shutdown(d.ServerUUID)
+	log.Debug("Stopping CloudSigma server...")
+	_, _, err = client.Servers.Shutdown(context.Background(), d.ServerUUID)
 	if err != nil {
 		return err
 	}
 
 	log.Debug("Waiting until server is stopped...")
 	for {
-		server, _, err := client.Servers.Get(d.ServerUUID)
+		server, _, err := client.Servers.Get(context.Background(), d.ServerUUID)
 		if err != nil {
 			return err
 		}
