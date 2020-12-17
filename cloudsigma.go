@@ -107,12 +107,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "cloudsigma-cpu-type",
 			Usage:  "CPU type",
 		},
-		//mcnflag.StringFlag{
-		//	EnvVar: "CLOUDSIGMA_DRIVE_NAME",
-		//	Name:   "cloudsigma-drive-name",
-		//	Usage:  "CloudSigma drive name",
-		//	Value:  defaultDriveName,
-		//},
+		mcnflag.StringFlag{
+			EnvVar: "CLOUDSIGMA_DRIVE_NAME",
+			Name:   "cloudsigma-drive-name",
+			Usage:  "CloudSigma drive name",
+			Value:  defaultDriveName,
+		},
 		mcnflag.IntFlag{
 			EnvVar: "CLOUDSIGMA_DRIVE_SIZE",
 			Name:   "cloudsigma-drive-size",
