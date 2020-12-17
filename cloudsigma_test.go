@@ -79,7 +79,6 @@ func TestCloudsigma_SetConfigFromFlags_CustomServerParameter(t *testing.T) {
 		FlagsValues: map[string]interface{}{
 			"cloudsigma-api-location": "wdc",
 			"cloudsigma-cpu":          1500,
-			"cloudsigma-cpu-epc-size": "8",
 			"cloudsigma-drive-name":   "",
 			"cloudsigma-drive-size":   15,
 			"cloudsigma-drive-uuid":   "generated-uuid",
@@ -96,7 +95,6 @@ func TestCloudsigma_SetConfigFromFlags_CustomServerParameter(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "wdc", driver.APILocation)
 	assert.Equal(t, 1500, driver.CPU)
-	assert.Equal(t, "8", driver.CPUEnclavePageCache)
 	assert.Equal(t, "", driver.DriveName)
 	assert.Equal(t, 15, driver.DriveSize)
 	assert.Equal(t, "generated-uuid", driver.DriveUUID)
