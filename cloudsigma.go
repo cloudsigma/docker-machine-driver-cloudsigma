@@ -1,13 +1,15 @@
 package cloudsigma
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
-	"github.com/cloudsigma/docker-machine-driver-cloudsigma/api"
+	"github.com/cloudsigma/cloudsigma-sdk-go/cloudsigma"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
@@ -17,9 +19,8 @@ import (
 
 const (
 	defaultCPU       = 2000
-	defaultCPUType   = "intel"
+	defaultDriveName = "ubuntu"
 	defaultDriveSize = 20
-	defaultDriveUUID = "6fe24a6b-b5c5-40ba-8860-771044d2500d"
 	defaultMemory    = 1024
 	defaultSSHPort   = 22
 	defaultSSHUser   = "cloudsigma"
@@ -27,18 +28,19 @@ const (
 
 type Driver struct {
 	*drivers.BaseDriver
-	APILocation         string
-	CPU                 int
-	CPUType             string
-	CPUEnclavePageCache string
-	DriveSize           int
-	DriveUUID           string
-	Memory              int
-	Password            string
-	ServerUUID          string
-	SSHKeyUUID          string
-	StaticIP            string
-	Username            string
+	APILocation     string
+	ClonedDriveUUID string
+	CPU             int
+	CPUType         string
+	DriveName       string
+	DriveSize       int
+	DriveUUID       string
+	Memory          int
+	Password        string
+	ServerUUID      string
+	SSHKeyUUID      string
+	StaticIP        string
+	Username        string
 }
 
 func NewDriver(hostName, storePath string) *Driver {
@@ -58,12 +60,12 @@ func (d *Driver) Create() error {
 	}
 	d.SSHKeyUUID = key.UUID
 
-	log.Info("Cloning library drive...")
-	drive, err := d.cloneDrive(d.DriveUUID)
+	log.Info("Cloning CloudSigma library drive...")
+	drive, err := d.cloneLibraryDrive()
 	if err != nil {
 		return err
 	}
-	d.DriveUUID = drive.UUID
+	d.ClonedDriveUUID = drive.UUID
 
 	log.Info("Creating CloudSigma server...")
 	server, err := d.createServer()
@@ -78,7 +80,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Debugf("Created server UUID %v, drive UUID %v, IP address %v", d.ServerUUID, d.DriveUUID, d.IPAddress)
+	log.Debugf("Created server UUID %v, drive UUID %v, IP address %v", d.ServerUUID, d.ClonedDriveUUID, d.IPAddress)
 
 	return nil
 }
@@ -104,12 +106,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "CLOUDSIGMA_CPU_TYPE",
 			Name:   "cloudsigma-cpu-type",
 			Usage:  "CPU type",
-			Value:  defaultCPUType,
 		},
 		mcnflag.StringFlag{
-			EnvVar: "CLOUDSIGMA_CPU_EPC_SIZE",
-			Name:   "cloudsigma-cpu-epc-size",
-			Usage:  "Enclave Page Cache (EPC) size",
+			EnvVar: "CLOUDSIGMA_DRIVE_NAME",
+			Name:   "cloudsigma-drive-name",
+			Usage:  "CloudSigma drive name",
+			Value:  defaultDriveName,
 		},
 		mcnflag.IntFlag{
 			EnvVar: "CLOUDSIGMA_DRIVE_SIZE",
@@ -121,7 +123,6 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "CLOUDSIGMA_DRIVE_UUID",
 			Name:   "cloudsigma-drive-uuid",
 			Usage:  "CloudSigma drive uuid",
-			Value:  defaultDriveUUID,
 		},
 		mcnflag.IntFlag{
 			EnvVar: "CLOUDSIGMA_MEMORY",
@@ -184,7 +185,7 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	server, _, err := d.getClient().Servers.Get(d.ServerUUID)
+	server, _, err := d.getClient().Servers.Get(context.Background(), d.ServerUUID)
 	if err != nil {
 		return state.Error, err
 	}
@@ -206,7 +207,7 @@ func (d *Driver) GetState() (state.State, error) {
 }
 
 func (d *Driver) Kill() error {
-	_, _, err := d.getClient().Servers.Stop(d.ServerUUID)
+	_, _, err := d.getClient().Servers.Stop(context.Background(), d.ServerUUID)
 	return err
 }
 
@@ -215,7 +216,7 @@ func (d *Driver) PreCreateCheck() error {
 		if parsedIP := net.ParseIP(d.StaticIP); parsedIP == nil {
 			return fmt.Errorf("%s is not a valid textual representation of an IP address", d.StaticIP)
 		}
-		_, _, err := d.getClient().IPs.Get(d.StaticIP)
+		_, _, err := d.getClient().IPs.Get(context.Background(), d.StaticIP)
 		if err != nil {
 			return err
 		}
@@ -233,18 +234,24 @@ func (d *Driver) Remove() error {
 	}
 
 	log.Info("Deleting SSH key...")
-	if resp, err := client.Keypairs.Delete(d.SSHKeyUUID); err != nil {
-		if resp.StatusCode == http.StatusNotFound {
-			log.Info("SSH key doesn't exist, assuming it is already deleted")
+	err = d.deleteSSHKey()
+	if err != nil {
+		return err
+	}
+
+	log.Info("Deleting CloudSigma server...")
+	if resp, err := client.Servers.Delete(context.Background(), d.ServerUUID); err != nil {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			log.Info("CloudSigma server doesn't exist, assuming it is already deleted")
 		} else {
 			return err
 		}
 	}
 
-	log.Infof("Deleting CloudSigma server...")
-	if resp, err := client.Servers.Delete(d.ServerUUID); err != nil {
-		if resp.StatusCode == http.StatusNotFound {
-			log.Info("CloudSigma server doesn't exist, assuming it is already deleted")
+	log.Info("Deleting CloudSigma drive...")
+	if resp, err := client.Drives.Delete(context.Background(), d.ClonedDriveUUID); err != nil {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			log.Info("CloudSigma drive doesn't exist, assuming it s already deleted")
 		} else {
 			return err
 		}
@@ -265,7 +272,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.APILocation = flags.String("cloudsigma-api-location")
 	d.CPU = flags.Int("cloudsigma-cpu")
 	d.CPUType = flags.String("cloudsigma-cpu-type")
-	d.CPUEnclavePageCache = flags.String("cloudsigma-cpu-epc-size")
+	d.DriveName = flags.String("cloudsigma-drive-name")
 	d.DriveSize = flags.Int("cloudsigma-drive-size")
 	d.DriveUUID = flags.String("cloudsigma-drive-uuid")
 	d.Memory = flags.Int("cloudsigma-memory")
@@ -283,6 +290,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return fmt.Errorf("cloudsigma driver requires the --cloudsigma-password option")
 	}
 
+	if d.DriveName != "" && d.DriveUUID != "" {
+		return fmt.Errorf("--cloudsigma-drive-name and --cloudsigma-drive-uuid are mutually exclusive")
+	}
+
 	return nil
 }
 
@@ -294,15 +305,16 @@ func (d *Driver) Stop() error {
 	return d.stopServer()
 }
 
-func (d *Driver) getClient() *api.Client {
-	client := api.NewBasicAuthClient(d.Username, d.Password)
+func (d *Driver) getClient() *cloudsigma.Client {
+	client := cloudsigma.NewBasicAuthClient(d.Username, d.Password)
 	if d.APILocation != "" {
-		client.SetLocationForBaseURL(d.APILocation)
+		client.SetLocation(d.APILocation)
 	}
+	client.SetUserAgent("docker-machine-driver-cloudsigma")
 	return client
 }
 
-func (d *Driver) createSSHKey() (*api.Keypair, error) {
+func (d *Driver) createSSHKey() (*cloudsigma.Keypair, error) {
 	d.SSHKeyPath = d.GetSSHKeyPath()
 
 	if err := ssh.GenerateSSHKey(d.SSHKeyPath); err != nil {
@@ -314,38 +326,101 @@ func (d *Driver) createSSHKey() (*api.Keypair, error) {
 		return nil, err
 	}
 
-	keypairCreateRequest := &api.KeypairCreateRequest{
-		Keypairs: []api.Keypair{
-			{Name: d.MachineName, PublicKey: string(publicKey)},
+	keypairCreateRequest := &cloudsigma.KeypairCreateRequest{
+		Keypairs: []cloudsigma.Keypair{
+			{Name: d.MachineName, PublicKey: strings.TrimRight(string(publicKey), "\r\n")},
 		},
 	}
 
-	key, _, err := d.getClient().Keypairs.Create(keypairCreateRequest)
+	keypairs, _, err := d.getClient().Keypairs.Create(context.Background(), keypairCreateRequest)
 	if err != nil {
-		return key, err
+		return nil, err
 	}
 
-	return key, nil
+	keypair := &keypairs[0]
+	log.Debugf("Created SSH key UUID: %v", keypair.UUID)
+
+	return keypair, nil
 }
 
-func (d *Driver) cloneDrive(uuid string) (*api.Drive, error) {
-	driveCloneRequest := &api.DriveCloneRequest{
-		Name:        d.MachineName,
-		Size:        d.DriveSize * 1024 * 1024 * 1024,
-		StorageType: "dssd",
+func (d *Driver) deleteSSHKey() error {
+	sshKeyUUID := d.SSHKeyUUID
+
+	resp, err := d.getClient().Keypairs.Delete(context.Background(), sshKeyUUID)
+	if err != nil {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			log.Info("SSH key doesn't exist, assuming it is already deleted")
+		} else {
+			return err
+		}
 	}
 
+	return nil
+}
+
+func (d *Driver) cloneLibraryDrive() (*cloudsigma.LibraryDrive, error) {
 	client := d.getClient()
-	clonedDrive, _, err := client.LibraryDrives.Clone(uuid, driveCloneRequest)
+
+	driveUUID := ""
+	if d.DriveName != "" {
+		listOptions := &cloudsigma.LibraryDriveListOptions{
+			NamesContain: []string{d.DriveName},
+			ListOptions:  cloudsigma.ListOptions{Limit: 0},
+		}
+		libraryDrives, _, err := client.LibraryDrives.List(context.Background(), listOptions)
+		if err != nil {
+			return nil, err
+		}
+
+		libdriveVersion := ""
+		libdriveUUID := ""
+		for _, libraryDrive := range libraryDrives {
+			if libraryDrive.ImageType != "preinst" {
+				continue
+			}
+			// exclude Ubuntu 20.10 because there is no stable repo with docker engine
+			// wait until https://github.com/docker/machine/issues/4856 is fixed
+			if strings.Contains(libraryDrive.Name, "Ubuntu 20.10") {
+				log.Debugf("Skip library drive %s (Ubuntu 20.10), because provisioning scripts are not available in stable channel", libraryDrive.UUID)
+				continue
+			}
+
+			if libdriveVersion == "" {
+				libdriveVersion = libraryDrive.Version
+				libdriveUUID = libraryDrive.UUID
+			}
+			if libdriveVersion < libraryDrive.Version {
+				libdriveVersion = libraryDrive.Version
+				libdriveUUID = libraryDrive.UUID
+			}
+		}
+
+		if libdriveUUID == "" {
+			return nil, fmt.Errorf("could not find any library drive with name %s", d.DriveName)
+		}
+		log.Debugf("Found library drive: %s, version: %s, UUID: %s", d.DriveName, libdriveVersion, libdriveUUID)
+
+		driveUUID = libdriveUUID
+	} else {
+		driveUUID = d.DriveUUID
+	}
+
+	cloneRequest := &cloudsigma.LibraryDriveCloneRequest{
+		LibraryDrive: &cloudsigma.LibraryDrive{
+			Name:        d.MachineName,
+			Size:        d.DriveSize * 1024 * 1024 * 1024,
+			StorageType: "dssd",
+		},
+	}
+	clonedDrive, _, err := client.LibraryDrives.Clone(context.Background(), driveUUID, cloneRequest)
 	if err != nil {
 		return clonedDrive, err
 	}
 
 	log.Debugf("Waiting until cloning process are done...")
 
-	driveUUID := clonedDrive.UUID
 	for {
-		drive, _, err := client.Drives.Get(driveUUID)
+		drive, _, err := client.Drives.Get(context.Background(), clonedDrive.UUID)
 		if err != nil {
 			return clonedDrive, nil
 		}
@@ -357,50 +432,47 @@ func (d *Driver) cloneDrive(uuid string) (*api.Drive, error) {
 		time.Sleep(1 * time.Second)
 	}
 
+	log.Debugf("Created drive UUID %v", clonedDrive.UUID)
+
 	return clonedDrive, nil
 }
 
-func (d *Driver) createServer() (*api.Server, error) {
-	serverCreateRequest := &api.ServerCreateRequest{
-		CPU:     d.CPU,
-		CPUType: d.CPUType,
-		Memory:  d.Memory * 1024 * 1024,
-		Name:    d.MachineName,
-		NICS: []api.NIC{
-			{IPv4Configuration: api.IPConfiguration{Configuration: "dhcp"}, Model: "virtio"},
+func (d *Driver) createServer() (*cloudsigma.Server, error) {
+	serverCreateRequest := &cloudsigma.ServerCreateRequest{
+		Servers: []cloudsigma.Server{
+			{
+				CPU:    d.CPU,
+				Memory: d.Memory * 1024 * 1024,
+				Name:   d.MachineName,
+				NICs: []cloudsigma.ServerNIC{
+					{IP4Configuration: &cloudsigma.ServerIPConfiguration{Type: "dhcp"}, Model: "virtio"},
+				},
+				PublicKeys:  []cloudsigma.Keypair{{UUID: d.SSHKeyUUID}},
+				VNCPassword: "cloudsigma",
+			},
 		},
-		PublicKeys:  []string{d.SSHKeyUUID},
-		VNCPassword: "cloudsigma",
 	}
 
 	if d.StaticIP != "" {
 		log.Debugf("Static ip address is defined %s, use it for NIC configuration.", d.StaticIP)
 
-		serverCreateRequest.NICS[0].IPv4Configuration = api.IPConfiguration{
-			Configuration: "static",
-			IP:            d.StaticIP,
+		serverCreateRequest.Servers[0].NICs[0].IP4Configuration = &cloudsigma.ServerIPConfiguration{
+			Type:      "static",
+			IPAddress: &cloudsigma.IP{UUID: d.StaticIP},
 		}
 	}
 
-	if d.CPUEnclavePageCache != "" {
-		log.Debugf("CPU enclave page cache is defined %s, use it by server creation.", d.CPUEnclavePageCache)
-
-		serverCreateRequest.CPUEnclavePageCache = d.CPUEnclavePageCache
-	}
-
-	log.Debug("Creating CloudSigma virtual server...")
-
 	client := d.getClient()
-	server, _, err := client.Servers.Create(serverCreateRequest)
+	servers, _, err := client.Servers.Create(context.Background(), serverCreateRequest)
 	if err != nil {
-		return server, err
+		return &servers[0], err
 	}
 
-	attachDriveRequest := &api.AttachDriveRequest{
-		CPU:     server.CPU,
-		CPUType: server.CPUType,
-		Drives: []api.ServerDrive{
-			{BootOrder: 1, DevChannel: "0:0", Device: "virtio", DriveUUID: d.DriveUUID},
+	server := &servers[0]
+	attachDriveRequest := &cloudsigma.ServerAttachDriveRequest{
+		CPU: server.CPU,
+		Drives: []cloudsigma.ServerDrive{
+			{BootOrder: 1, DevChannel: "0:0", Device: "virtio", Drive: &cloudsigma.Drive{UUID: d.ClonedDriveUUID}},
 		},
 		Memory:      server.Memory,
 		Name:        server.Name,
@@ -408,7 +480,7 @@ func (d *Driver) createServer() (*api.Server, error) {
 	}
 
 	log.Debug("Attaching existing drive to virtual server...")
-	server, _, err = client.Servers.AttachDrive(server.UUID, attachDriveRequest)
+	server, _, err = client.Servers.AttachDrive(context.Background(), server.UUID, attachDriveRequest)
 	if err != nil {
 		return server, err
 	}
@@ -420,7 +492,7 @@ func (d *Driver) startServer() error {
 	client := d.getClient()
 
 	log.Debug("Checking server state...")
-	server, _, err := client.Servers.Get(d.ServerUUID)
+	server, _, err := client.Servers.Get(context.Background(), d.ServerUUID)
 	if err != nil {
 		return nil
 	}
@@ -430,7 +502,7 @@ func (d *Driver) startServer() error {
 	}
 
 	log.Debug("Starting CloudSigma virtual server...")
-	_, _, err = client.Servers.Start(d.ServerUUID)
+	_, _, err = client.Servers.Start(context.Background(), d.ServerUUID)
 	if err != nil {
 		return err
 	}
@@ -438,11 +510,17 @@ func (d *Driver) startServer() error {
 	d.IPAddress = ""
 	log.Debug("Waiting for IP address to be assigned to the server...")
 	for {
-		server, _, err = client.Servers.Get(d.ServerUUID)
+		time.Sleep(1 * time.Second)
+
+		server, _, err = client.Servers.Get(context.Background(), d.ServerUUID)
 		if err != nil {
 			return nil
 		}
-		for _, nic := range server.Runtime.RuntimeNICS {
+		if server.Runtime == nil {
+			continue
+		}
+
+		for _, nic := range server.Runtime.RuntimeNICs {
 			if nic.InterfaceType == "public" {
 				d.IPAddress = nic.IPv4.UUID
 			}
@@ -450,7 +528,6 @@ func (d *Driver) startServer() error {
 		if d.IPAddress != "" && server.Status == "running" {
 			break
 		}
-		time.Sleep(1 * time.Second)
 	}
 
 	return nil
@@ -460,7 +537,7 @@ func (d *Driver) stopServer() error {
 	client := d.getClient()
 
 	log.Debug("Checking server state...")
-	server, _, err := client.Servers.Get(d.ServerUUID)
+	server, _, err := client.Servers.Get(context.Background(), d.ServerUUID)
 	if err != nil {
 		return nil
 	}
@@ -469,15 +546,15 @@ func (d *Driver) stopServer() error {
 		return nil
 	}
 
-	log.Debug("Stopping CloudSigma virtual server...")
-	_, _, err = client.Servers.Shutdown(d.ServerUUID)
+	log.Debug("Stopping CloudSigma server...")
+	_, _, err = client.Servers.Shutdown(context.Background(), d.ServerUUID)
 	if err != nil {
 		return err
 	}
 
 	log.Debug("Waiting until server is stopped...")
 	for {
-		server, _, err := client.Servers.Get(d.ServerUUID)
+		server, _, err := client.Servers.Get(context.Background(), d.ServerUUID)
 		if err != nil {
 			return err
 		}
