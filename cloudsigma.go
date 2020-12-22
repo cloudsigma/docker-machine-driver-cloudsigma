@@ -26,6 +26,7 @@ const (
 	defaultSSHUser   = "cloudsigma"
 )
 
+// Driver represents a CloudSigma driver type.
 type Driver struct {
 	*drivers.BaseDriver
 	APILocation     string
@@ -43,6 +44,7 @@ type Driver struct {
 	Username        string
 }
 
+// NewDriver creates a CloudSigma driver.
 func NewDriver(hostName, storePath string) *Driver {
 	return &Driver{
 		BaseDriver: &drivers.BaseDriver{
@@ -52,6 +54,7 @@ func NewDriver(hostName, storePath string) *Driver {
 	}
 }
 
+// Create makes a new host using the driver's config.
 func (d *Driver) Create() error {
 	log.Info("Creating SSH key...")
 	key, err := d.createSSHKey()
@@ -85,10 +88,12 @@ func (d *Driver) Create() error {
 	return nil
 }
 
+// DriverName returns the CloudSigma driver's name.
 func (d *Driver) DriverName() string {
 	return "cloudsigma"
 }
 
+// GetCreateFlags returns the flags that can be set, their descriptions and defaults.
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.StringFlag{
@@ -160,10 +165,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	}
 }
 
+// GetSSHHostname returns hostname for use with ssh.
 func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
 }
 
+// GetSSHKeyPath returns key path for use with ssh.
 func (d *Driver) GetSSHKeyPath() string {
 	if d.SSHKeyPath == "" {
 		d.SSHKeyPath = d.ResolveStorePath("id_rsa")
@@ -171,6 +178,7 @@ func (d *Driver) GetSSHKeyPath() string {
 	return d.SSHKeyPath
 }
 
+// GetURL returns a Docker compatible host URL for connecting to this host.
 func (d *Driver) GetURL() (string, error) {
 	if err := drivers.MustBeRunning(d); err != nil {
 		return "", nil
@@ -184,6 +192,7 @@ func (d *Driver) GetURL() (string, error) {
 	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, "2376")), nil
 }
 
+// GetState returns the state that the host is in (running, stopped, etc).
 func (d *Driver) GetState() (state.State, error) {
 	server, _, err := d.getClient().Servers.Get(context.Background(), d.ServerUUID)
 	if err != nil {
@@ -206,11 +215,13 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
+// Kill stops a host forcefully.
 func (d *Driver) Kill() error {
 	_, _, err := d.getClient().Servers.Stop(context.Background(), d.ServerUUID)
 	return err
 }
 
+// PreCreateCheck allows for pre-create operations to make sure a driver is ready for creation.
 func (d *Driver) PreCreateCheck() error {
 	if d.StaticIP != "" {
 		if parsedIP := net.ParseIP(d.StaticIP); parsedIP == nil {
@@ -224,6 +235,7 @@ func (d *Driver) PreCreateCheck() error {
 	return nil
 }
 
+// Remove deletes a host.
 func (d *Driver) Remove() error {
 	client := d.getClient()
 
@@ -260,6 +272,7 @@ func (d *Driver) Remove() error {
 	return nil
 }
 
+// Restart calls Stop() and Start().
 func (d *Driver) Restart() error {
 	err := d.stopServer()
 	if err != nil {
@@ -268,6 +281,7 @@ func (d *Driver) Restart() error {
 	return d.startServer()
 }
 
+// SetConfigFromFlags configures the driver with the object returned by RegisterCreateFlags.
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.APILocation = flags.String("cloudsigma-api-location")
 	d.CPU = flags.Int("cloudsigma-cpu")
@@ -297,10 +311,12 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
+// Start sends 'start' action to start a host.
 func (d *Driver) Start() error {
 	return d.startServer()
 }
 
+// Stop sends 'stop' action to stop a host gracefully.
 func (d *Driver) Stop() error {
 	return d.stopServer()
 }

@@ -3,6 +3,7 @@
 [![Release](https://img.shields.io/github/v/tag/cloudsigma/docker-machine-driver-cloudsigma?label=release)](https://github.com/cloudsigma/docker-machine-driver-cloudsigma/releases)
 [![License](https://img.shields.io/github/license/cloudsigma/docker-machine-driver-cloudsigma.svg)](https://github.com/cloudsigma/docker-machine-driver-cloudsigma/blob/master/LICENSE)
 [![Unit Tests](https://github.com/cloudsigma/docker-machine-driver-cloudsigma/workflows/unit%20tests/badge.svg)](https://github.com/cloudsigma/docker-machine-driver-cloudsigma/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/cloudsigma/docker-machine-driver-cloudsigma)](https://goreportcard.com/report/github.com/cloudsigma/docker-machine-driver-cloudsigma)
 
 Create Docker machines on [CloudSigma](https://www.cloudsigma.com/).
 
@@ -49,7 +50,7 @@ If you encounter any troubles, activate the debug mode with `docker-machine --de
 | `--cloudsigma-cpu-type`     | `CLOUDSIGMA_CPU_TYPE`     | -                                      |
 | `--cloudsigma-drive-name`   | `CLOUDSIGMA_DRIVE_NAME`   | `ubuntu`                               |
 | `--cloudsigma-drive-size`   | `CLOUDSIGMA_DRIVE_SIZE`   | `20`                                   |
-| `--cloudsigma-drive-uuid`   | `CLOUDSIGMA_DRIVE_UUID`   | ``                                     |
+| `--cloudsigma-drive-uuid`   | `CLOUDSIGMA_DRIVE_UUID`   | -                                      |
 | `--cloudsigma-memory`       | `CLOUDSIGMA_MEMORY`       | `1024`                                 |
 | **`--cloudsigma-password`** | `CLOUDSIGMA_PASSWORD`     | -                                      |
 | `--cloudsigma-ssh-port`     | `CLOUDSIGMA_SSH_PORT`     | `22`                                   |
