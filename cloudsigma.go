@@ -227,8 +227,21 @@ func (d *Driver) PreCreateCheck() error {
 		if parsedIP := net.ParseIP(d.StaticIP); parsedIP == nil {
 			return fmt.Errorf("%s is not a valid textual representation of an IP address", d.StaticIP)
 		}
-		_, _, err := d.getClient().IPs.Get(context.Background(), d.StaticIP)
+		_, resp, err := d.getClient().IPs.Get(context.Background(), d.StaticIP)
 		if err != nil {
+			if resp != nil && resp.StatusCode == http.StatusNotFound {
+				return fmt.Errorf("IP address %s not found, check your active subscriptions", d.StaticIP)
+			}
+			return err
+		}
+	}
+
+	if d.DriveUUID != "" {
+		_, resp, err := d.getClient().LibraryDrives.Get(context.Background(), d.DriveUUID)
+		if err != nil {
+			if resp != nil && resp.StatusCode == http.StatusNotFound {
+				return fmt.Errorf("drive with UUID %s not found", d.DriveUUID)
+			}
 			return err
 		}
 	}
