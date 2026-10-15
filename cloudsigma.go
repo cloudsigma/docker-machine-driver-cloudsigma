@@ -2,6 +2,7 @@ package cloudsigma
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -335,12 +336,14 @@ func (d *Driver) Stop() error {
 }
 
 func (d *Driver) getClient() *cloudsigma.Client {
-	client := cloudsigma.NewBasicAuthClient(d.Username, d.Password)
-	if d.APILocation != "" {
-		client.SetLocation(d.APILocation)
+	opts := []cloudsigma.ClientOption{
+		cloudsigma.WithHTTPClient(&http.Client{Timeout: 15 * time.Second}),
+		cloudsigma.WithUserAgent("docker-machine-driver-cloudsigma"),
 	}
-	client.SetUserAgent("docker-machine-driver-cloudsigma")
-	return client
+	if d.APILocation != "" {
+		opts = append(opts, cloudsigma.WithLocation(d.APILocation))
+	}
+	return cloudsigma.NewClient(cloudsigma.NewUsernamePasswordCredentialsProvider(d.Username, d.Password), opts...)
 }
 
 func (d *Driver) createSSHKey() (*cloudsigma.Keypair, error) {
@@ -494,22 +497,34 @@ func (d *Driver) createServer() (*cloudsigma.Server, error) {
 	client := d.getClient()
 	servers, _, err := client.Servers.Create(context.Background(), serverCreateRequest)
 	if err != nil {
-		return &servers[0], err
+		return nil, err
 	}
 
+	if len(servers) == 0 {
+		return nil, fmt.Errorf("server create returned no servers")
+	}
 	server := &servers[0]
-	attachDriveRequest := &cloudsigma.ServerAttachDriveRequest{
-		CPU: server.CPU,
-		Drives: []cloudsigma.ServerDrive{
+	// Preserve the legacy attachment fields, including explicit zero/empty values.
+	// Do not echo unrelated fields from the create response.
+	attachDriveRequest := cloudsigma.ServerDefinition{}
+	for key, value := range map[string]interface{}{
+		"cpu": server.CPU,
+		"drives": []cloudsigma.ServerDrive{
 			{BootOrder: 1, DevChannel: "0:0", Device: "virtio", Drive: &cloudsigma.Drive{UUID: d.ClonedDriveUUID}},
 		},
-		Memory:      server.Memory,
-		Name:        server.Name,
-		VNCPassword: server.VNCPassword,
+		"mem":          server.Memory,
+		"name":         server.Name,
+		"vnc_password": server.VNCPassword,
+	} {
+		encoded, err := json.Marshal(value)
+		if err != nil {
+			return nil, err
+		}
+		attachDriveRequest[key] = encoded
 	}
 
 	log.Debug("Attaching existing drive to virtual server...")
-	server, _, err = client.Servers.AttachDrive(context.Background(), server.UUID, attachDriveRequest)
+	server, _, err = client.Servers.UpdateDefinition(context.Background(), server.UUID, attachDriveRequest)
 	if err != nil {
 		return server, err
 	}
