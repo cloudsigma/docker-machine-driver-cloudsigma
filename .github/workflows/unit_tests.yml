@@ -3,30 +3,49 @@ on:
   push:
     paths:
       - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/unit_tests.yml'
+
+permissions:
+  contents: read
+
+env:
+  GOTOOLCHAIN: local
+  GOFLAGS: -mod=readonly
 
 jobs:
   unit_tests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.15
+          go-version: '1.22.2'
+          cache: false
 
       - name: Set up cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             ~/go/pkg/mod
-            .bin
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go-
+          key: ${{ runner.os }}-go-1.22.2-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-1.22.2-
 
       - name: Lint source code
-        run: make tools lint
+        run: |
+          mkdir -p .bin
+          GOBIN="$PWD/.bin" go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.57.2
+          .bin/golangci-lint run --no-config --disable-all \
+            --enable=errcheck --enable=gofmt --enable=gosimple \
+            --enable=ineffassign --enable=misspell --enable=staticcheck \
+            --enable=unconvert --enable=unused --enable=govet \
+            --timeout=10m ./...
 
       - name: Run unit tests
         run: make test
