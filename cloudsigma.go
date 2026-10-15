@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -353,7 +353,7 @@ func (d *Driver) createSSHKey() (*cloudsigma.Keypair, error) {
 		return nil, err
 	}
 
-	publicKey, err := ioutil.ReadFile(d.SSHKeyPath + ".pub")
+	publicKey, err := os.ReadFile(d.SSHKeyPath + ".pub")
 	if err != nil {
 		return nil, err
 	}
