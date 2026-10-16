@@ -454,7 +454,7 @@ func (d *Driver) cloneLibraryDrive() (*cloudsigma.LibraryDrive, error) {
 	for {
 		drive, _, err := client.Drives.Get(context.Background(), clonedDrive.UUID)
 		if err != nil {
-			return clonedDrive, nil
+			return clonedDrive, err
 		}
 
 		if drive.Status == "unmounted" {
