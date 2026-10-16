@@ -538,7 +538,7 @@ func (d *Driver) startServer() error {
 	log.Debug("Checking server state...")
 	server, _, err := client.Servers.Get(context.Background(), d.ServerUUID)
 	if err != nil {
-		return nil
+		return err
 	}
 	if server.Status == "running" {
 		log.Debug("Server is already running")
@@ -558,7 +558,7 @@ func (d *Driver) startServer() error {
 
 		server, _, err = client.Servers.Get(context.Background(), d.ServerUUID)
 		if err != nil {
-			return nil
+			return err
 		}
 		if server.Runtime == nil {
 			continue
@@ -583,7 +583,7 @@ func (d *Driver) stopServer() error {
 	log.Debug("Checking server state...")
 	server, _, err := client.Servers.Get(context.Background(), d.ServerUUID)
 	if err != nil {
-		return nil
+		return err
 	}
 	if server.Status == "stopped" {
 		log.Debug("Server is already stopped")
