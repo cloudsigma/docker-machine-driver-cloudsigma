@@ -1,7 +1,7 @@
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 h1:w+iIsaOQNcT7OZ575w+acHgRric5iCyQh+xv+KJ4HB8=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=
-github.com/cloudsigma/cloudsigma-sdk-go v0.15.2-0.20261014005222-23a76b03af7c h1:iX2495lQQvvqWtJFbldMB+F8NDqPMIB79tp7rCVcKmA=
-github.com/cloudsigma/cloudsigma-sdk-go v0.15.2-0.20261014005222-23a76b03af7c/go.mod h1:IZUiWj1x02mY8hfw6+EtBDDbqx4+ubadvy6htgKUXa8=
+github.com/cloudsigma/cloudsigma-sdk-go v0.15.2-0.20261016084029-c756dd43b16c h1:9dW2nrdbMO2528ZvASpfn1v5OLmiwZGHkUthPXc72lw=
+github.com/cloudsigma/cloudsigma-sdk-go v0.15.2-0.20261016084029-c756dd43b16c/go.mod h1:IZUiWj1x02mY8hfw6+EtBDDbqx4+ubadvy6htgKUXa8=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

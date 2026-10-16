@@ -5,7 +5,7 @@ go 1.22
 toolchain go1.22.2
 
 require (
-	github.com/cloudsigma/cloudsigma-sdk-go v0.15.2-0.20261014005222-23a76b03af7c
+	github.com/cloudsigma/cloudsigma-sdk-go v0.15.2-0.20261016084029-c756dd43b16c
 	github.com/docker/machine v0.16.2
 	github.com/stretchr/testify v1.9.0
 )
